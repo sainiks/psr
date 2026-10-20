@@ -1,40 +1,43 @@
-# Project Zenith (Poornima Astra Tribute)
+# Tanu's WISH (Astra Protocol & Airspace Sanctuary)
 
-A premium, interactive web experience built as a birthday tribute. The application blends high-fashion editorial aesthetics with military aviation (AFCAT) themes, utilizing a highly polished UI/UX design standard.
+A premium, interactive motion graphics web experience built as a birthday tribute for Tanu (Poornima). The application fuses high-fashion dark editorial aesthetics with tactical military aviation (AFCAT stealth interceptors) and rich real-time motion graphics.
 
-## Features
-- **Cinematic 3D Video Carousel:** An infinite-looping, spatial carousel displaying custom MP4 files with depth-of-field blurring and dynamic progress tracking.
-- **Ultra-Glassmorphism Bento Grid:** Advanced CSS masking and backdrop-filters to create a high-end, futuristic architectural layout.
-- **Astra Core AI Integration:** Live API connection to Gemini for generating dynamic, personalized profile assessments.
-- **Fluid AI Background:** A CSS-driven mesh gradient that morphs continuously, creating a bioluminescent effect.
-- **Secure Terminal Intro:** A cinematic loading sequence establishing the "Secure Uplink" narrative.
+## Features & Motion Graphics Engine
+- **Tactical Motion Graphics Canvas Engine:** High-performance HTML5 Canvas rendering a 360° rotating radar sweep with phosphorescent phosphor trails, reactive tactical blips, floating particle constellation with mouse deflection physics, and supersonic hypersonic vector trails.
+- **Interactive Flight Telemetry & Acoustics HUD:** Dedicated motion-designed Bento module featuring:
+  - **Interactive Cockpit Artificial Horizon:** Real-time gyro pitch-ladder and roll attitude indicator reacting dynamically to cursor position.
+  - **Harmonic Acoustics & Waveform Visualizer:** Live morphing multi-frequency mathematical sine wave + 12-band equalizer spectrum bars with spring bounce physics.
+  - **Mach Vector Speedometer:** Radial SVG gauge with glowing sweep arc, velocity readouts (Mach 2.45), altitude metrics, and g-force status.
+- **Tanu's WISH Celestial Particle Matrix:** Full-screen interactive celebration modal featuring expanding supersonic shockwaves, cosmic starbursts, Web Audio API harmonic chime chords, and 6 clickable wish constellation directives.
+- **Dual-Velocity Kinetic Typography Marquee:** Smooth 60fps infinite kinetic ticker ribbons showcasing airspace coordinates and sovereign sanctuary directives.
+- **Cinematic 3D Video Carousel with Live HUD:** An infinite-looping 3D spatial carousel with depth-of-field blurring, timecode frame clock (`REC // 00:0X:SS:MS`), video telemetry tags, and precision progress scrubber.
+- **Ultra-Glassmorphism Bento Grid with Traveling Border Beams:** Conic-gradient traveling neon light beams (`border-beam`), 3D perspective mouse tilt, and radial cursor spotlight glow.
+- **Official Trifold Commendation Document:** Printable (`window.print()`), cryptographically styled executive commendation with Gemini AI re-synthesis capability.
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js (v16+)
-- A Gemini API Key (from Google AI Studio)
+- Node.js (v18+)
+- A Gemini API Key (optional; high-craft offline fallback included)
 
 ### Installation
-1. Clone the repository or initialize a new React project (e.g., using Vite: `npm create vite@latest . -- --template react`).
-2. Install dependencies:
-   ```bash
-   npm install lucide-react
-   ```
-3. Add your Gemini API key (Optional):
-   - Open `poornima_astra.tsx` (or `src/App.jsx`).
-   - Locate the `fetchAIAssessment` function.
-   - Set your key or pass via `VITE_GEMINI_API_KEY` (if omitted, high-craft local synthesis will execute).
-4. Media Archive:
-   - Configured with the 13 `.mp4` video files in `public/` (`/1.mp4` through `/13.mp4`), loaded into `archiveData`.
+```bash
+npm install
+```
 
 ### Running the App
 ```bash
 npm run dev
 ```
 
+### Building for Production
+```bash
+npm run build
+```
+
 ## Tech Stack
-- React.js (Hooks, Refs, State)
-- CSS-in-JS (Custom Stylesheet injection)
-- Tailwind CSS (Utility classes for grid/layout)
+- React.js (Hooks, Refs, State, Web Audio API)
+- HTML5 Canvas (Real-Time 60fps Motion Graphics Engine)
+- CSS-in-JS (Custom Stylesheet injection & Keyframes)
+- Tailwind CSS (Utility classes for layout)
 - Lucide React (Icons)

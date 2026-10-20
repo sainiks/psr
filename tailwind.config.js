@@ -8,8 +8,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        editorial: ['"Playfair Display"', 'serif'],
-        sans: ['Inter', 'sans-serif'],
+        sans: ['Geist', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        mono: ['"Geist Mono"', 'monospace'],
+        editorial: ['Geist', 'sans-serif'],
       },
     },
   },

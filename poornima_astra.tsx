@@ -1,1330 +1,233 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-  Crosshair, Sparkles, Fingerprint, Activity, Shield, ChevronRight, 
-  Play, Pause, ChevronLeft, Disc, Volume2, VolumeX, Printer, Award, 
-  FileText, CheckCircle2, Lock, ShieldCheck 
-} from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ArrowDown, Camera, Clapperboard, Heart, Plane, Play, Sparkles, X } from 'lucide-react';
 
-const customStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap');
-
-  :root {
-    --bg-base: #050505;
-    --text-primary: #ffffff;
-    --text-secondary: rgba(255, 255, 255, 0.6);
-    --glass-bg: rgba(20, 20, 22, 0.4);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --accent-1: #8A2BE2; /* Purple */
-    --accent-2: #4169E1; /* Royal Blue */
-    --accent-3: #00FFFF; /* Cyan */
-  }
-
-  body {
-    background-color: var(--bg-base);
-    color: var(--text-primary);
-    font-family: 'Inter', sans-serif;
-    margin: 0;
-    overflow-x: hidden;
-    min-height: 100vh;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  .font-editorial { font-family: 'Playfair Display', serif; }
-
-  /* Fluid AI Background */
-  .astra-bg {
-    position: fixed;
-    top: 0; left: 0; width: 100vw; height: 100vh;
-    background: var(--bg-base);
-    z-index: 0;
-    overflow: hidden;
-  }
-
-  .mesh-gradient {
-    position: absolute;
-    top: 50%; left: 50%;
-    width: 120vw; height: 120vh;
-    transform: translate(-50%, -50%);
-    background: radial-gradient(circle at 50% 50%, var(--accent-1) 0%, transparent 40%),
-                radial-gradient(circle at 80% 20%, var(--accent-2) 0%, transparent 40%),
-                radial-gradient(circle at 20% 80%, var(--accent-3) 0%, transparent 40%);
-    filter: blur(100px);
-    opacity: 0.4;
-    animation: morph 20s ease-in-out infinite alternate;
-    pointer-events: none;
-  }
-
-  @keyframes morph {
-    0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
-    50% { transform: translate(-45%, -55%) rotate(180deg) scale(1.1); }
-    100% { transform: translate(-50%, -50%) rotate(360deg) scale(1); }
-  }
-
-  /* Cinematic Noise Overlay */
-  .noise-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100vw; height: 100vh;
-    pointer-events: none;
-    z-index: 1;
-    opacity: 0.04;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  }
-
-  /* Ultra-Premium Glassmorphism */
-  .ultra-glass {
-    background: var(--glass-bg);
-    backdrop-filter: blur(60px);
-    -webkit-backdrop-filter: blur(60px);
-    border: 1px solid var(--glass-border);
-    border-radius: 24px;
-    position: relative;
-    overflow: hidden;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, box-shadow 0.4s ease;
-  }
-
-  .ultra-glass::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 24px;
-    padding: 1px;
-    background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    pointer-events: none;
-  }
-
-  .bento-hover:hover {
-    transform: translateY(-4px) scale(1.01);
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), 0 0 40px rgba(255, 255, 255, 0.05);
-  }
-
-  /* AI Orb for Intro */
-  .ai-orb {
-    width: 120px; height: 120px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent-1), var(--accent-3));
-    filter: blur(15px);
-    animation: pulseOrb 4s ease-in-out infinite;
-    position: relative;
-  }
-
-  .ai-orb-core {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 60px; height: 60px;
-    background: white;
-    border-radius: 50%;
-    filter: blur(8px);
-  }
-
-  @keyframes pulseOrb {
-    0%, 100% { transform: scale(1); filter: blur(15px); }
-    50% { transform: scale(1.1); filter: blur(25px); }
-  }
-
-  /* Smooth Reveals */
-  .fade-up {
-    opacity: 0;
-    transform: translateY(20px);
-    animation: fadeUpAnim 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  @keyframes fadeUpAnim {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .delay-1 { animation-delay: 0.1s; }
-  .delay-2 { animation-delay: 0.2s; }
-  .delay-3 { animation-delay: 0.3s; }
-  .delay-4 { animation-delay: 0.4s; }
-  .delay-5 { animation-delay: 0.5s; }
-
-  /* Gradient Text */
-  .text-gradient {
-    background: linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.4) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  
-  /* Story Progress Bar */
-  .story-progress-bg {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    overflow: hidden;
-    height: 3px;
-    flex: 1;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    transition: height 0.2s ease, background-color 0.2s ease;
-  }
-  .story-progress-bg:hover {
-    height: 5px;
-  }
-  .story-progress-fill {
-    height: 100%;
-    background: #fff;
-    transform-origin: left;
-    transition: width 0.1s linear;
-  }
-  
-  .spin-slow {
-    animation: spin 4s linear infinite;
-  }
-
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  /* Cinematic Carousel Styles */
-  .carousel-container {
-    perspective: 1000px;
-    transform-style: preserve-3d;
-  }
-  
-  .carousel-item {
-    transition: all 0.7s cubic-bezier(0.25, 1, 0.5, 1);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  }
-
-  .scrubber-track {
-    background: rgba(255,255,255,0.1);
-    height: 3px;
-    width: 100%;
-    position: relative;
-    cursor: pointer;
-  }
-  
-  .scrubber-fill {
-    background: var(--accent-3, #00FFFF);
-    height: 100%;
-    width: 0%;
-    box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-  }
-
-  /* Trifold Official Document Styling */
-  .trifold-card {
-    background: rgba(14, 14, 18, 0.75);
-    backdrop-filter: blur(60px);
-    -webkit-backdrop-filter: blur(60px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 28px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  }
-
-  .trifold-panel {
-    position: relative;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, rgba(0, 0, 0, 0.2) 100%);
-  }
-
-  .trifold-crease-left {
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: inset -12px 0 20px -10px rgba(0, 0, 0, 0.8);
-  }
-
-  .trifold-crease-right {
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: inset 12px 0 20px -10px rgba(0, 0, 0, 0.8);
-  }
-
-  .tactical-grid-bg {
-    background-image: 
-      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-    background-size: 20px 20px;
-  }
-
-  .scanner-line {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: #00FFFF;
-    box-shadow: 0 0 12px #00FFFF, 0 0 24px #00FFFF;
-    animation: scanAnim 2.5s ease-in-out infinite;
-    z-index: 20;
-  }
-
-  @keyframes scanAnim {
-    0% { top: 0%; opacity: 0; }
-    20% { opacity: 1; }
-    80% { opacity: 1; }
-    100% { top: 100%; opacity: 0; }
-  }
-
-  .tactical-seal {
-    width: 78px;
-    height: 78px;
-    border-radius: 50%;
-    border: 1.5px dashed rgba(0, 255, 255, 0.4);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    background: radial-gradient(circle, rgba(0, 255, 255, 0.08) 0%, transparent 70%);
-  }
-
-  @media print {
-    body {
-      background: #050505 !important;
-      color: #ffffff !important;
-    }
-    .astra-bg, .noise-overlay, button {
-      display: none !important;
-    }
-  }
-`;
-
-interface ArchiveItem {
-  id: number;
-  videoUrl: string;
-  title: string;
-  subtitle: string;
-}
-
-interface AIIntroSequenceProps {
-  onComplete: () => void;
-}
-
-interface HeroCarouselProps {
-  archives: ArchiveItem[];
-}
-
-// Helper to safely extract Gemini API Key across Vite, Node, and browser environments
-const getApiKey = (): string => {
-  try {
-    if (typeof import.meta !== 'undefined' && (import.meta as any)?.env) {
-      const env = (import.meta as any).env;
-      if (env.VITE_GEMINI_API_KEY) return env.VITE_GEMINI_API_KEY;
-      if (env.VITE_API_KEY) return env.VITE_API_KEY;
-    }
-    const g = typeof window !== 'undefined' ? (window as any) : (globalThis as any);
-    if (g?.process?.env) {
-      if (g.process.env.REACT_APP_GEMINI_API_KEY) return g.process.env.REACT_APP_GEMINI_API_KEY;
-      if (g.process.env.GEMINI_API_KEY) return g.process.env.GEMINI_API_KEY;
-    }
-  } catch (e) {
-    // Ignore environment resolution errors
-  }
-  return "";
-};
-
-// ============================================================================
-// STORY DATA CONFIGURATION (13 Archive Vectors)
-// Sourced from public/ (1.mp4 through 13.mp4)
-// ============================================================================
-const archiveData: ArchiveItem[] = [
-  { id: 0, videoUrl: '/1.mp4', title: 'Vector 01 // Airspace', subtitle: 'Aura & Altitude' },
-  { id: 1, videoUrl: '/2.mp4', title: 'Vector 02 // Silhouette', subtitle: 'Tactical Elegance' },
-  { id: 2, videoUrl: '/3.mp4', title: 'Vector 03 // Stealth Profile', subtitle: 'Quiet Magnitude' },
-  { id: 3, videoUrl: '/4.mp4', title: 'Vector 04 // Velocity', subtitle: 'Editorial Precision' },
-  { id: 4, videoUrl: '/5.mp4', title: 'Vector 05 // Cockpit Focus', subtitle: 'AFCAT Trajectory' },
-  { id: 5, videoUrl: '/6.mp4', title: 'Vector 06 // Clear Horizon', subtitle: 'Zero Turbulence' },
-  { id: 6, videoUrl: '/7.mp4', title: 'Vector 07 // Resonance', subtitle: 'Unspoken Grace' },
-  { id: 7, videoUrl: '/8.mp4', title: 'Vector 08 // Neural Vault', subtitle: 'Unbroken Frequency' },
-  { id: 8, videoUrl: '/9.mp4', title: 'Vector 09 // Runway Glide', subtitle: 'High-Fashion Cadence' },
-  { id: 9, videoUrl: '/10.mp4', title: 'Vector 10 // Stratosphere', subtitle: 'Supersonic Ascent' },
-  { id: 10, videoUrl: '/11.mp4', title: 'Vector 11 // Shield Matrix', subtitle: 'Unconditional Sanctuary' },
-  { id: 11, videoUrl: '/12.mp4', title: 'Vector 12 // Celestial Apex', subtitle: 'Design & Architecture' },
-  { id: 12, videoUrl: '/13.mp4', title: 'Vector 13 // Safe Harbor', subtitle: 'Command Safe Space' },
+const photos = [
+  { src: '/img/WhatsApp Image 2026-09-21 at 22.15.42.jpeg', label: 'One for the camera roll' },
+  { src: '/img/WhatsApp Image 2026-10-06 at 17.13.27.jpeg', label: 'A day to keep' },
+  { src: '/img/WhatsApp Image 2026-09-21 at 22.16.34.jpeg', label: 'Just you' },
+  { src: '/img/tanu-memory.webp', label: 'Another favourite' },
+  { src: '/img/842608892_17904385437588295_5104484414049162163_n.webp', label: 'A little snapshot' },
+  { src: '/img/857189100_17905787178588295_1323502340611779721_n.webp', label: 'One to remember' },
+  { src: '/img/855643127_17905789452588295_4710484533333073808_n.webp', label: 'A favourite frame' },
 ];
-
-const AIIntroSequence: React.FC<AIIntroSequenceProps> = ({ onComplete }) => {
-  const [phase, setPhase] = useState(0);
-  const [isExiting, setIsExiting] = useState(false);
-
-  useEffect(() => {
-    const t1 = setTimeout(() => setPhase(1), 1500);
-    const t2 = setTimeout(() => setPhase(2), 3500);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
-
-  const handleFinish = () => {
-    if (isExiting) return;
-    setIsExiting(true);
-    setTimeout(onComplete, 600);
-  };
-
-  return (
-    <div className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050505] transition-opacity duration-700 ${isExiting ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-      {/* Top right quick skip */}
-      <button 
-        onClick={handleFinish}
-        aria-label="Skip uplink intro sequence"
-        className="absolute top-6 right-6 text-white/40 hover:text-white text-xs tracking-widest uppercase transition-colors flex items-center gap-1 cursor-pointer z-50 min-h-[44px] min-w-[44px] p-3"
-      >
-        Skip Uplink <ChevronRight size={14} />
-      </button>
-
-      <div className={`transition-all duration-1000 ${phase >= 1 ? 'scale-150 opacity-0 pointer-events-none absolute' : 'scale-100 opacity-100'}`}>
-        <div className="ai-orb">
-          <div className="ai-orb-core"></div>
-        </div>
-      </div>
-      
-      <div className={`flex flex-col items-center text-center px-4 transition-all duration-1000 ${phase >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none absolute'}`}>
-        <Fingerprint size={48} className="text-white/40 mx-auto mb-6" strokeWidth={1} />
-        <h2 className="font-editorial text-3xl md:text-4xl text-white/90 tracking-wide">Neural Sync Established.</h2>
-        <p className="text-white/40 text-xs md:text-sm mt-2 font-light tracking-[0.25em] uppercase">Target // Poornima Astra &bull; Nov 07</p>
-
-        <div className={`mt-8 transition-all duration-700 ${phase === 2 ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
-          <button 
-            onClick={handleFinish}
-            className="px-8 py-4 min-h-[48px] rounded-full bg-white/10 border border-white/20 text-white hover:bg-white hover:text-black transition-all duration-500 flex items-center gap-3 backdrop-blur-md cursor-pointer shadow-[0_0_25px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(0,255,255,0.3)]"
-          >
-            Initialize Interface <ChevronRight size={16} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const PREVIEW_DURATION = 2000; // 2 seconds per mp4 in auto-rotation mode
-
-const HeroCarousel: React.FC<HeroCarouselProps> = ({ archives }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(true);
-  // Default to muted for seamless browser autoplay compatibility
-  const [isMuted, setIsMuted] = useState(true);
-  const [progress, setProgress] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-  const [isFullLengthLocked, setIsFullLengthLocked] = useState(false);
-  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
-  const prevIndexRef = useRef(currentIndex);
-
-  const isFullLength = isHovered || isFullLengthLocked;
-
-  // Playback control when slide or state changes
-  useEffect(() => {
-    const isSlideChange = prevIndexRef.current !== currentIndex;
-    prevIndexRef.current = currentIndex;
-
-    videoRefs.current.forEach((video, index) => {
-      if (!video) return;
-      if (index === currentIndex) {
-        if (isSlideChange) {
-          video.currentTime = 0;
-          setProgress(0);
-        }
-        video.muted = isMuted;
-        if (isPlaying) {
-          const playPromise = video.play();
-          if (playPromise !== undefined) {
-            playPromise.catch((e) => {
-              console.log("Autoplay notice:", e);
-              // Fallback to muted playback if audio autoplay is restricted by browser policy
-              if (!video.muted) {
-                video.muted = true;
-                setIsMuted(true);
-                video.play().catch(err => console.log("Muted autoplay fallback failed:", err));
-              }
-            });
-          }
-        } else {
-          video.pause();
-        }
-      } else {
-        video.pause();
-        video.currentTime = 0;
-      }
-    });
-  }, [currentIndex, isPlaying, isMuted]);
-
-  // Mode 1: 2-second auto-rotation preview timer (rotates every 2 seconds when not hovered/clicked)
-  useEffect(() => {
-    if (!isPlaying || isFullLength) return;
-
-    setProgress(0);
-    const startTime = Date.now();
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const pct = Math.min(100, (elapsed / PREVIEW_DURATION) * 100);
-      setProgress(pct);
-
-      if (elapsed >= PREVIEW_DURATION) {
-        clearInterval(interval);
-        setCurrentIndex(prev => (prev + 1) % archives.length);
-      }
-    }, 25);
-
-    return () => clearInterval(interval);
-  }, [currentIndex, isPlaying, isFullLength, archives.length]);
-
-  // Mode 2: Full-length progress tracking synced with active video playback (when hovered or clicked)
-  useEffect(() => {
-    if (!isPlaying || !isFullLength) return;
-    let animId: number;
-
-    const updateProgress = () => {
-      const activeVideo = videoRefs.current[currentIndex];
-      if (activeVideo && Number.isFinite(activeVideo.duration) && activeVideo.duration > 0) {
-        const pct = Math.min(100, (activeVideo.currentTime / activeVideo.duration) * 100);
-        setProgress(pct);
-      }
-      animId = requestAnimationFrame(updateProgress);
-    };
-
-    animId = requestAnimationFrame(updateProgress);
-    return () => cancelAnimationFrame(animId);
-  }, [currentIndex, isPlaying, isFullLength]);
-
-  const handleVideoEnd = useCallback(() => {
-    setProgress(0);
-    setIsFullLengthLocked(false);
-    setCurrentIndex(prev => (prev + 1) % archives.length);
-  }, [archives.length]);
-
-  const handleNext = useCallback((e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setProgress(0);
-    setIsFullLengthLocked(false);
-    setCurrentIndex(prev => (prev + 1) % archives.length);
-  }, [archives.length]);
-
-  const handlePrev = useCallback((e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setProgress(0);
-    setIsFullLengthLocked(false);
-    setCurrentIndex(prev => (prev - 1 + archives.length) % archives.length);
-  }, [archives.length]);
-
-  const togglePlayPause = useCallback((e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setIsPlaying(prev => {
-      const nextState = !prev;
-      const activeVideo = videoRefs.current[currentIndex];
-      if (activeVideo) {
-        if (nextState) {
-          activeVideo.play().catch(err => console.log("Play error:", err));
-        } else {
-          activeVideo.pause();
-        }
-      }
-      return nextState;
-    });
-  }, [currentIndex]);
-
-  const toggleMute = useCallback((e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setIsMuted(prev => {
-      const nextMuted = !prev;
-      const activeVideo = videoRefs.current[currentIndex];
-      if (activeVideo) {
-        activeVideo.muted = nextMuted;
-      }
-      return nextMuted;
-    });
-  }, [currentIndex]);
-
-  // Clicking center video locks full length mode or toggles play/pause
-  const handleCenterVideoClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isFullLengthLocked) {
-      setIsFullLengthLocked(true);
-      if (!isPlaying) {
-        setIsPlaying(true);
-        const activeVideo = videoRefs.current[currentIndex];
-        activeVideo?.play().catch(err => console.log("Play error:", err));
-      }
-    } else {
-      togglePlayPause(e);
-    }
-  };
-
-  // Keyboard navigation shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
-      if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        handleNext();
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        handlePrev();
-      } else if (e.key === ' ' || e.code === 'Space') {
-        e.preventDefault();
-        setIsFullLengthLocked(true);
-        togglePlayPause();
-      } else if (e.key === 'm' || e.key === 'M') {
-        e.preventDefault();
-        toggleMute();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleNext, handlePrev, togglePlayPause, toggleMute]);
-
-  // Scrubber click handler to seek within the active video and engage full length mode
-  const handleScrubberClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickPos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const activeVideo = videoRefs.current[currentIndex];
-    setIsFullLengthLocked(true);
-    if (activeVideo && Number.isFinite(activeVideo.duration) && activeVideo.duration > 0) {
-      activeVideo.currentTime = clickPos * activeVideo.duration;
-      setProgress(clickPos * 100);
-    }
-  };
-
-  const currentArchive = archives[currentIndex] || archives[0];
-
-  return (
-    <div className="relative w-full min-h-[60vh] flex flex-col items-center justify-center mb-16 fade-up z-20">
-      
-      {/* Top Title */}
-      <div className="flex items-center gap-4 mb-6">
-        <div className="w-12 h-12 rounded-full bg-white/5 backdrop-blur-md flex items-center justify-center border border-white/10 shadow-[0_0_15px_rgba(0,255,255,0.1)]">
-          <Fingerprint size={24} className="text-cyan-400" />
-        </div>
-        <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-white text-2xl font-editorial tracking-wider">{currentArchive.title}</h2>
-            <span className={`px-2 py-0.5 rounded-full text-[9px] font-medium tracking-widest uppercase border backdrop-blur-sm transition-all ${
-              isFullLength 
-                ? "bg-cyan-500/20 border-cyan-400/40 text-cyan-300 shadow-[0_0_10px_rgba(0,255,255,0.2)]" 
-                : "bg-white/10 border-white/20 text-white/50"
-            }`}>
-              {isFullLength ? "Full Length" : "2s Rotation"}
-            </span>
-          </div>
-          <p className="text-[10px] text-cyan-400 uppercase tracking-[0.3em] font-medium mt-0.5">{currentArchive.subtitle}</p>
-        </div>
-      </div>
-
-      {/* 13-Vector Story Segments (Instagram-style Progress) */}
-      <div className="w-full max-w-md flex items-center gap-1.5 px-6 mb-6 z-30">
-        {archives.map((item, idx) => {
-          const isPast = idx < currentIndex;
-          const isCurrent = idx === currentIndex;
-          return (
-            <button
-              key={item.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                setProgress(0);
-                setIsFullLengthLocked(true);
-                setCurrentIndex(idx);
-              }}
-              aria-label={`Jump to ${item.title} (full length)`}
-              className="story-progress-bg group"
-              title={`${item.title} - Click to play full length`}
-            >
-              <div 
-                className="story-progress-fill"
-                style={{
-                  width: isPast ? '100%' : isCurrent ? `${progress}%` : '0%',
-                  backgroundColor: isCurrent ? '#00FFFF' : 'rgba(255,255,255,0.7)'
-                }}
-              />
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 3D Carousel Area */}
-      <div className="relative w-full h-[48vh] min-h-[440px] md:h-[55vh] md:min-h-[520px] flex items-center justify-center carousel-container">
-        {archives.map((archive, index) => {
-          const offset = index - currentIndex;
-          const isCenter = offset === 0;
-          
-          // Advanced wrap-around math for smooth circular 3D offset calculation
-          let displayOffset = offset;
-          const halfLength = Math.floor(archives.length / 2);
-          if (displayOffset > halfLength) displayOffset -= archives.length;
-          if (displayOffset < -halfLength) displayOffset += archives.length;
-          
-          const isVisible = Math.abs(displayOffset) <= 2; // Only render nearby items for performance
-          if (!isVisible && !isCenter) return null;
-
-          const translateX = displayOffset * 70; // Spread items out horizontally
-          const scale = isCenter ? 1 : Math.max(0.6, 1 - Math.abs(displayOffset) * 0.2);
-          const blur = isCenter ? 0 : Math.min(8, Math.abs(displayOffset) * 4);
-          const opacity = isCenter ? 1 : Math.max(0, 0.8 - Math.abs(displayOffset) * 0.3);
-          const zIndex = 50 - Math.abs(displayOffset);
-
-          return (
-            <div 
-              key={archive.id}
-              onClick={(e) => {
-                if (!isCenter) {
-                  setCurrentIndex(index);
-                  setIsFullLengthLocked(true);
-                  setProgress(0);
-                } else {
-                  handleCenterVideoClick(e);
-                }
-              }}
-              onMouseEnter={() => {
-                if (isCenter) setIsHovered(true);
-              }}
-              onMouseLeave={() => {
-                if (isCenter) setIsHovered(false);
-              }}
-              className="carousel-item absolute w-[68vw] max-w-[320px] aspect-[9/16] rounded-3xl overflow-hidden border border-white/20 bg-zinc-900 cursor-pointer select-none"
-              style={{
-                transform: `translateX(${translateX}%) scale(${scale})`,
-                filter: `blur(${blur}px)`,
-                opacity: opacity,
-                zIndex: zIndex,
-                boxShadow: isCenter ? '0 0 40px rgba(0, 255, 255, 0.15)' : 'none'
-              }}
-            >
-              <video
-                ref={el => { videoRefs.current[index] = el; }}
-                src={archive.videoUrl}
-                className="w-full h-full object-cover"
-                playsInline
-                preload="auto"
-                loop={false}
-                muted={isMuted}
-                onEnded={isCenter ? handleVideoEnd : undefined}
-                onClick={isCenter ? handleCenterVideoClick : undefined}
-              />
-              
-              {/* Tactical Mode Toggle Badge on active center video */}
-              {isCenter && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsFullLengthLocked(prev => !prev);
-                  }}
-                  aria-label={isFullLength ? "Switch to 2s auto-preview" : "Lock full length playback"}
-                  className={`absolute top-4 left-4 z-40 px-3 py-1 min-h-[36px] rounded-full border backdrop-blur-md flex items-center gap-2 transition-all cursor-pointer shadow-lg text-[10px] font-medium tracking-widest uppercase ${
-                    isFullLength
-                      ? "bg-cyan-950/80 border-cyan-400/60 text-cyan-300 shadow-[0_0_15px_rgba(0,255,255,0.25)]"
-                      : "bg-black/60 border-white/20 text-white/70 hover:text-white hover:border-white/40"
-                  }`}
-                  title={isFullLength ? "Full Length Active (Click to switch to 2s preview)" : "2s Preview (Hover or click to play full length)"}
-                >
-                  <div className={`w-1.5 h-1.5 rounded-full ${isFullLength ? "bg-cyan-400 animate-pulse" : "bg-white/40"}`} />
-                  <span>{isFullLength ? "Full Length" : "2s Preview"}</span>
-                </button>
-              )}
-
-              {/* Floating Mute Toggle on active video */}
-              {isCenter && (
-                <button
-                  onClick={toggleMute}
-                  aria-label={isMuted ? "Unmute audio" : "Mute audio"}
-                  className="absolute top-4 right-4 z-40 w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-black/80 hover:border-cyan-400/60 transition-all cursor-pointer shadow-lg"
-                  title={isMuted ? "Unmute audio" : "Mute audio"}
-                >
-                  {isMuted ? <VolumeX size={18} className="text-white/70" /> : <Volume2 size={18} className="text-cyan-400" />}
-                </button>
-              )}
-
-              {/* Play/Pause Overlay for active video */}
-              {isCenter && !isPlaying && (
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none">
-                  <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg">
-                    <Play size={32} className="text-white ml-1" fill="currentColor" />
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Bottom Navigation & Video Scrubber */}
-      <div 
-        className="w-full max-w-md px-8 flex flex-col items-center gap-6 mt-8"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        
-        {/* Custom Progress Scrubber for current video */}
-        <div 
-          className="w-full relative h-6 flex items-center group cursor-pointer" 
-          onClick={handleScrubberClick}
-          aria-label="Seek active video timeline"
-          role="slider"
-          aria-valuenow={Math.round(progress)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-        >
-          <div className="scrubber-track rounded-full overflow-hidden h-[3px] bg-white/10 group-hover:h-[6px] transition-all">
-            <div className="scrubber-fill relative" style={{ width: `${progress}%` }}>
-               <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white rounded-full shadow-[0_0_10px_#00FFFF] opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation & Controls */}
-        <div className="flex items-center gap-4 sm:gap-6">
-          <button 
-            onClick={handlePrev}
-            aria-label="Previous archive"
-            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full border border-white/10 text-white/70 hover:text-white hover:bg-white/10 hover:border-white/30 transition-all flex items-center justify-center cursor-pointer"
-            title="Previous Vector (Left Arrow)"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          
-          <button 
-            onClick={togglePlayPause}
-            aria-label={isPlaying ? "Pause video playback" : "Resume video playback"}
-            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full border border-white/10 text-white/70 hover:text-white hover:bg-white/10 hover:border-white/30 transition-all flex items-center justify-center cursor-pointer"
-            title={isPlaying ? "Pause video (Space)" : "Resume video (Space)"}
-          >
-            {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" fill="currentColor" />}
-          </button>
-
-          <div className="font-editorial text-white/50 text-sm tracking-[0.3em] select-none px-1">
-            <span className="text-white text-lg font-medium">{String(currentIndex + 1).padStart(2, '0')}</span> / {String(archives.length).padStart(2, '0')}
-          </div>
-          
-          <button 
-            onClick={handleNext}
-            aria-label="Next archive"
-            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full border border-white/10 text-white/70 hover:text-white hover:bg-white/10 hover:border-white/30 transition-all flex items-center justify-center cursor-pointer"
-            title="Next Vector (Right Arrow)"
-          >
-            <ChevronRight size={20} />
-          </button>
-
-          <div className="h-4 w-px bg-white/10 mx-1"></div>
-
-          <button 
-            onClick={toggleMute}
-            aria-label={isMuted ? "Unmute audio" : "Mute audio"}
-            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full border border-white/10 text-white/70 hover:text-white hover:bg-white/10 hover:border-white/30 transition-all flex items-center justify-center cursor-pointer"
-            title={isMuted ? "Unmute audio (M)" : "Mute audio (M)"}
-          >
-            {isMuted ? <VolumeX size={18} className="text-white/40" /> : <Volume2 size={18} className="text-cyan-400" />}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const defaultBirthdayDirective = 
-`Cadet Poornima,
-
-On this seventh day of November, the airspace stands in formal commendation of an exceedingly rare architecture. While the world may only perceive effortless runway grace, telemetry registers your true coordinates: the razor precision of an elite UI/UX designer fused with the unflinching courage of an Indian Air Force aviator engineered for the cockpit of stealth fighters.
-
-Past flight paths brought heavy storms and betrayals by those who failed to comprehend the sacredness of your trust. Those trials tested your altitude, but they never broke your trajectory—they only honed your radar and fortified an unbreakable inner sanctuary.
-
-By executive decree of Project Zenith, this airspace is permanently ratified as your unconditional safe harbor. In this frequency, your coordinates are guarded, your data is sacred, and your perimeter is forever impenetrable against turbulence or betrayal. You are free to command your own horizon without fear.
-
-Happy Birthday, Poornima. May your ascent remain supersonic, your radar crystal clear, and your skies boundless.`;
-
-const BentoDashboard: React.FC = () => {
-  const [aiResponse, setAiResponse] = useState(defaultBirthdayDirective);
-  const [isThinking, setIsThinking] = useState(false);
-
-  const fetchAIAssessment = async () => {
-    setIsThinking(true);
-    try {
-      const apiKey = getApiKey();
-      const prompt = "Generate an official, profound, and deeply moving birthday letter for a girl named Poornima celebrating her birthday on November 7th. She has the effortless aesthetic of a high-fashion model, but her real ambition is to be an Indian Air Force pilot (AFCAT) flying stealth jets like the F-22 or B-2. She has been betrayed by friends and family in the past, so she has trust issues. Her mother is a highly successful graphics designer for big tech MNCs, and Poornima herself is studying to be a great UI/UX designer. Write this as an 'Official Executive Birthday Commendation & Airspace Decree' from Astra Core and Kunal: formally wish her a very Happy Birthday, honor her extraordinary dual nature of runway grace and supersonic warrior intellect, acknowledge her resilience through past betrayals, and officially decree that this airspace is an eternal, inviolable safe space where her trust is protected. Keep the tone like a high-level military-diplomatic dispatch blended with deep empathetic warmth. No hashtags.";
-
-      if (!apiKey) {
-        // High-craft fallback response matching the exact prompt constraints when no API key is set
-        await new Promise(resolve => setTimeout(resolve, 1400));
-        setAiResponse(defaultBirthdayDirective);
-        return;
-      }
-
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-      const payload = {
-        contents: [{ parts: [{ text: prompt }] }]
-      };
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const result = await response.json();
-      if (result.candidates && result.candidates.length > 0 && result.candidates[0].content?.parts?.[0]?.text) {
-        setAiResponse(result.candidates[0].content.parts[0].text);
-      } else {
-        throw new Error("Invalid response format");
-      }
-    } catch (error) {
-      setAiResponse(defaultBirthdayDirective);
-    } finally {
-      setIsThinking(false);
-    }
-  };
-
-  return (
-    <div className="relative z-10 w-full min-h-screen flex flex-col items-center p-4 md:p-8 lg:p-12 box-border pb-24">
-      
-      {/* Header */}
-      <header className="w-full max-w-6xl flex justify-between items-center mb-8 fade-up z-30 relative">
-        <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></div>
-          <span className="text-white/70 text-[10px] font-medium tracking-[0.3em] uppercase">Project Zenith // Safe Space Airspace</span>
-        </div>
-        <div className="flex items-center gap-4 text-[10px] font-medium tracking-widest uppercase text-white/40">
-          <span className="hidden sm:inline border border-white/10 px-2.5 py-1 rounded-full bg-white/5">07.NOV // ASTRA PROTOCOL</span>
-          <span>Auth // Kunal</span>
-        </div>
-      </header>
-
-      {/* Hero Section Carousel */}
-      <HeroCarousel archives={archiveData} />
-
-      {/* Bento Grid */}
-      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-4 gap-6 relative z-30">
-        
-        {/* Main Card */}
-        <div className="ultra-glass bento-hover md:col-span-2 p-8 lg:p-10 flex flex-col justify-end min-h-[350px] fade-up delay-1 group relative">
-          <div className="absolute top-8 right-8 w-12 h-12 rounded-full border border-white/10 flex items-center justify-center bg-white/5 group-hover:bg-cyan-500/10 group-hover:border-cyan-400/30 transition-all duration-500">
-            <Sparkles size={20} className="text-white/60 group-hover:text-cyan-400 transition-colors" />
-          </div>
-          <div className="space-y-4">
-            <h1 className="font-editorial text-5xl lg:text-7xl font-light text-gradient leading-tight">
-              Aura &<br/>Altitude.
-            </h1>
-            <p className="text-white/75 text-sm lg:text-base font-light leading-relaxed max-w-md">
-              Some people are engineered for the runway. Others are built for the cockpit of a stealth bomber. You possess the exceedingly rare architecture for both.
-            </p>
-          </div>
-        </div>
-
-        {/* F-35C Lightning II 3D Interactive Model Card */}
-        <div className="ultra-glass bento-hover md:col-span-2 p-6 lg:p-8 flex flex-col justify-between min-h-[350px] fade-up delay-2 group relative">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-2">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-              <span className="text-white/60 text-[10px] tracking-[0.2em] uppercase font-medium">
-                Tactical 3D Vector // AFCAT Airspace
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-400/30 text-cyan-300 text-[9px] tracking-wider uppercase font-medium">
-              F-35C Stealth
-            </div>
-          </div>
-
-          {/* 3D Viewport */}
-          <div className="relative w-full h-[240px] sm:h-[260px] rounded-2xl overflow-hidden border border-white/10 bg-black/40 shadow-inner">
-            <iframe
-              title="F-35C Lightning II"
-              className="w-full h-full border-0"
-              allowFullScreen
-              allow="autoplay; fullscreen; xr-spatial-tracking"
-              src="https://sketchfab.com/models/1b187b18ce1541e2ae3321065ac61cbe/embed?autospin=1&autostart=1&preload=1&transparent=1&ui_theme=dark&ui_infos=0&ui_hint=0"
-            />
-            {/* Tactical HUD corner reticles */}
-            <div className="absolute top-2 left-2 w-3 h-3 border-t border-l border-cyan-400/40 pointer-events-none" />
-            <div className="absolute top-2 right-2 w-3 h-3 border-t border-r border-cyan-400/40 pointer-events-none" />
-            <div className="absolute bottom-2 left-2 w-3 h-3 border-b border-l border-cyan-400/40 pointer-events-none" />
-            <div className="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-cyan-400/40 pointer-events-none" />
-          </div>
-
-          {/* Footer with Attribution & Interactive Hint */}
-          <div className="flex items-center justify-between text-[11px] text-white/50 pt-2">
-            <span className="font-light tracking-wide flex items-center gap-1.5 text-white/60">
-              <Crosshair size={12} className="text-cyan-400" />
-              Interactive 3D • Drag to Orbit / Zoom
-            </span>
-            <a
-              href="https://sketchfab.com/3d-models/f-35c-lightning-ii-1b187b18ce1541e2ae3321065ac61cbe"
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              className="text-cyan-400/80 hover:text-cyan-300 transition-colors flex items-center gap-1 text-[10px] tracking-wider uppercase font-medium"
-              title="F-35C Lightning II by saippua on Sketchfab"
-            >
-              saippua // Sketchfab <ChevronRight size={12} />
-            </a>
-          </div>
-        </div>
-
-        {/* Ambition Card */}
-        <div className="ultra-glass bento-hover md:col-span-2 p-8 flex flex-col justify-between min-h-[220px] fade-up delay-3 group">
-          <div className="flex justify-between items-start">
-            <Crosshair size={24} className="text-white/50 group-hover:text-cyan-400 transition-colors duration-500" strokeWidth={1.5} />
-            <span className="text-white/40 text-[10px] tracking-[0.2em] uppercase">AFCAT Target</span>
-          </div>
-          <div>
-            <h3 className="text-xl font-medium text-white/90 mb-3">The Ambition</h3>
-            <p className="text-white/75 text-sm font-light leading-relaxed">
-              Behind the effortless model aesthetic and UI/UX precision is a tactical mind. A strength forged in silence, carrying the profound impact of an F-22 and 5th-generation stealth aviation.
-            </p>
-          </div>
-        </div>
-
-        {/* Secure Uplink Card */}
-        <div className="ultra-glass bento-hover md:col-span-2 p-8 flex flex-col justify-between min-h-[220px] fade-up delay-4 group">
-           <div className="flex justify-between items-start">
-            <Shield size={24} className="text-white/50 group-hover:text-purple-400 transition-colors duration-500" strokeWidth={1.5} />
-            <span className="text-white/40 text-[10px] tracking-[0.2em] uppercase">Secure Uplink</span>
-          </div>
-          <div>
-            <h3 className="text-xl font-medium text-white/90 mb-3">Clear Airspace</h3>
-            <p className="text-white/75 text-sm font-light leading-relaxed">
-              In this frequency, your radar is clear. No turbulence, no betrayal. Just a safe place to land and be entirely yourself.
-            </p>
-          </div>
-        </div>
-
-        {/* Official Trifold Document: Astra Core Birthday Directive */}
-        <div className="md:col-span-4 fade-up delay-5 w-full">
-          {/* Document Section Header & Control Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-4 px-2">
-            <div className="flex items-center gap-3">
-              <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
-              <div>
-                <span className="text-white/80 text-xs font-medium tracking-[0.25em] uppercase">
-                  Astra Core Telemetry // Official Executive Directive
-                </span>
-                <span className="hidden sm:inline-block ml-3 text-[10px] text-white/40 tracking-widest font-mono">
-                  DISPATCH REF: PZ-ASTRA-0711
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => window.print()}
-                aria-label="Print official directive document"
-                className="px-3.5 py-2 min-h-[38px] rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/25 text-white/70 hover:text-white transition-all text-xs font-medium flex items-center gap-2 cursor-pointer backdrop-blur-md"
-                title="Print Official Document"
-              >
-                <Printer size={14} className="text-cyan-400" />
-                <span className="hidden sm:inline">Print Document</span>
-              </button>
-
-              <button 
-                onClick={fetchAIAssessment}
-                disabled={isThinking}
-                aria-label={isThinking ? 'Synthesizing Directive...' : 'Re-synthesize Directive'}
-                className="px-4 py-2 min-h-[38px] rounded-xl bg-cyan-500/10 border border-cyan-400/30 hover:bg-cyan-500/20 hover:border-cyan-400/60 transition-all text-xs font-medium text-cyan-300 flex items-center gap-2 group/btn disabled:opacity-50 cursor-pointer shadow-[0_0_15px_rgba(0,255,255,0.1)]"
-                title="Re-synthesize official AI birthday directive"
-              >
-                <Activity size={14} className={isThinking ? "animate-pulse text-cyan-400" : "group-hover/btn:rotate-12 transition-transform"} />
-                <span>{isThinking ? 'Synthesizing Directive...' : 'Re-synthesize Directive'}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* The Trifold Physical / Glass Document Container */}
-          <div className="trifold-card tactical-grid-bg">
-            {/* Top Classification Margin */}
-            <div className="w-full bg-black/40 border-b border-white/10 px-6 py-2.5 flex flex-wrap items-center justify-between text-[10px] font-mono tracking-[0.2em] text-white/40">
-              <div className="flex items-center gap-2">
-                <Lock size={11} className="text-cyan-400" />
-                <span className="text-cyan-300/80 uppercase">CLASSIFIED // EYES ONLY: CADET POORNIMA</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <span>SECURITY CLEARANCE: LEVEL-V</span>
-                <span className="hidden sm:inline text-white/30">|</span>
-                <span className="hidden sm:inline text-white/50">PROJECT ZENITH AIRSPACE COMMAND</span>
-              </div>
-            </div>
-
-            {/* 3-Panel Trifold Body */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[520px]">
-              
-              {/* PANEL I (Left Flap: Flight Manifest & Security Docket) */}
-              <div className="lg:col-span-3 p-6 sm:p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-white/10 trifold-panel">
-                <div className="space-y-6">
-                  {/* Panel Fold Indicator */}
-                  <div className="flex items-center justify-between text-[9px] font-mono text-white/30 tracking-[0.25em] uppercase pb-2 border-b border-white/5">
-                    <span>PANEL I // MANIFEST</span>
-                    <span>FOLD α</span>
-                  </div>
-
-                  {/* Emblem */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(0,255,255,0.15)]">
-                      <ShieldCheck size={20} />
-                    </div>
-                    <div>
-                      <h4 className="text-white text-sm font-semibold tracking-wider uppercase">Airspace Docket</h4>
-                      <p className="text-[10px] text-white/40 font-mono">FILE: PZ-ASTRA-0711</p>
-                    </div>
-                  </div>
-
-                  {/* Metadata Fields */}
-                  <div className="space-y-3 font-mono text-xs">
-                    <div className="bg-white/5 p-3 rounded-xl border border-white/5 space-y-1">
-                      <span className="text-[9px] text-cyan-400/80 uppercase tracking-widest block">Designated Subject</span>
-                      <p className="text-white font-medium">Cadet Poornima</p>
-                      <span className="text-[10px] text-white/50 block">Callsign: Astra-01 // Apex</span>
-                    </div>
-
-                    <div className="bg-white/5 p-3 rounded-xl border border-white/5 space-y-1">
-                      <span className="text-[9px] text-cyan-400/80 uppercase tracking-widest block">Celebration Apex</span>
-                      <p className="text-white font-medium">07 November (Annual)</p>
-                      <span className="text-[10px] text-white/50 block">Mission: Birthday Commendation</span>
-                    </div>
-
-                    <div className="bg-white/5 p-3 rounded-xl border border-white/5 space-y-1">
-                      <span className="text-[9px] text-cyan-400/80 uppercase tracking-widest block">Core Specializations</span>
-                      <p className="text-white/90 text-[11px] leading-tight font-sans">
-                        • Indian Air Force (AFCAT) Pursuit<br/>
-                        • 5th-Gen Stealth Interceptors<br/>
-                        • Elite UI/UX Digital Architecture
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Left Flap Footer (Barcode & Security Seal) */}
-                <div className="pt-6 mt-6 border-t border-white/10 space-y-3">
-                  <div className="flex items-center justify-between text-[10px] text-white/40 font-mono">
-                    <span>SECTOR STATUS</span>
-                    <span className="text-cyan-400 flex items-center gap-1">
-                      <CheckCircle2 size={11} /> 100% SECURE
-                    </span>
-                  </div>
-                  {/* Decorative Barcode */}
-                  <div className="h-7 w-full bg-white/5 rounded flex items-center justify-between px-2 font-mono text-[9px] tracking-widest text-white/30 overflow-hidden border border-white/5">
-                    <span>||||| ||| ||||||| |||| |||||| ||||| |||</span>
-                    <span className="hidden sm:inline">AUTH-07NOV</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* PANEL II (Center Page: The Official Birthday Letter) */}
-              <div className="lg:col-span-6 p-6 sm:p-10 flex flex-col justify-between relative trifold-panel bg-black/30 trifold-crease-left trifold-crease-right">
-                {/* Scanner line when synthesizing */}
-                {isThinking && <div className="scanner-line" />}
-
-                <div>
-                  {/* Center Header */}
-                  <div className="text-center space-y-2 pb-6 border-b border-white/10 relative">
-                    <div className="flex items-center justify-center gap-2 text-cyan-400 text-[10px] font-mono tracking-[0.3em] uppercase">
-                      <Sparkles size={13} />
-                      <span>OFFICIAL DIRECTIVE // OPERATION ASTRA</span>
-                      <Sparkles size={13} />
-                    </div>
-                    <h2 className="font-editorial text-2xl sm:text-3xl lg:text-4xl text-gradient tracking-wide">
-                      Executive Birthday Commendation
-                    </h2>
-                    <p className="text-white/50 text-[11px] font-mono tracking-[0.2em] uppercase">
-                      Decree of Permanent Sanctuary • 07 November
-                    </p>
-                  </div>
-
-                  {/* Letter Content */}
-                  <div className="py-6 sm:py-8 space-y-4">
-                    {isThinking ? (
-                      <div className="py-16 flex flex-col items-center justify-center gap-4 text-center">
-                        <Activity size={32} className="text-cyan-400 animate-pulse" />
-                        <p className="text-cyan-300 text-sm font-mono tracking-widest uppercase">
-                          Decrypting Neural Telemetry...
-                        </p>
-                        <p className="text-white/40 text-xs font-light max-w-sm">
-                          Synthesizing personalized flight coordinates and official birthday commendation for Cadet Poornima.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4 text-white/90 font-light text-sm sm:text-base leading-relaxed text-left">
-                        {aiResponse.split('\n\n').map((paragraph, index) => {
-                          const isFirst = index === 0;
-                          const isBirthdayWish = paragraph.toLowerCase().includes('happy birthday');
-                          return (
-                            <p 
-                              key={index} 
-                              className={`${
-                                isFirst 
-                                  ? "font-editorial text-lg sm:text-xl text-white tracking-wide font-normal" 
-                                  : isBirthdayWish 
-                                    ? "p-4 rounded-2xl bg-cyan-950/40 border border-cyan-400/30 text-cyan-200 font-normal shadow-[0_0_20px_rgba(0,255,255,0.15)]"
-                                    : "text-white/80"
-                              }`}
-                            >
-                              {paragraph}
-                            </p>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Center Page Footer: Official Seal */}
-                <div className="pt-6 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    {/* Glowing Cyan Hologram Seal */}
-                    <div className="tactical-seal shadow-[0_0_25px_rgba(0,255,255,0.2)]">
-                      <Award size={22} className="text-cyan-400 mb-0.5" />
-                      <span className="text-[7px] font-mono tracking-tighter text-cyan-300 uppercase font-bold">RATIFIED</span>
-                      <span className="text-[6px] font-mono tracking-widest text-cyan-400/80">07.NOV</span>
-                    </div>
-                    <div>
-                      <p className="text-white text-xs font-medium uppercase tracking-wider">Seal of Permanent Sanctuary</p>
-                      <p className="text-[10px] text-white/40 font-mono">Inviolable Safe Space Protocol // Project Zenith</p>
-                    </div>
-                  </div>
-
-                  <div className="text-right">
-                    <span className="text-[9px] font-mono text-cyan-400/80 tracking-widest uppercase block">VALIDITY</span>
-                    <span className="text-white font-mono text-xs font-semibold tracking-wider">PERPETUAL // NO EXPIRY</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* PANEL III (Right Flap: Telemetry Endorsement & Ratification) */}
-              <div className="lg:col-span-3 p-6 sm:p-8 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-white/10 trifold-panel">
-                <div className="space-y-6">
-                  {/* Panel Fold Indicator */}
-                  <div className="flex items-center justify-between text-[9px] font-mono text-white/30 tracking-[0.25em] uppercase pb-2 border-b border-white/5">
-                    <span>PANEL III // RATIFICATION</span>
-                    <span>FOLD β</span>
-                  </div>
-
-                  {/* Telemetric Parameters */}
-                  <div className="space-y-3">
-                    <span className="text-[10px] font-mono text-white/50 tracking-widest uppercase block">
-                      Telemetry Endorsements
-                    </span>
-
-                    <div className="space-y-2.5 text-xs font-mono">
-                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5">
-                        <span className="text-white/50 text-[10px]">RADAR STATUS</span>
-                        <span className="text-cyan-300 font-medium">CLEARED (0% THREAT)</span>
-                      </div>
-                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5">
-                        <span className="text-white/50 text-[10px]">AIRSPACE TRUST</span>
-                        <span className="text-purple-300 font-medium">100% UNCONDITIONAL</span>
-                      </div>
-                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5">
-                        <span className="text-white/50 text-[10px]">TURBULENCE</span>
-                        <span className="text-cyan-400 font-medium">ZERO / SHIELDED</span>
-                      </div>
-                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5">
-                        <span className="text-white/50 text-[10px]">ALTITUDE LIMIT</span>
-                        <span className="text-white font-medium">UNRESTRICTED</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Solemn Official Signature Block */}
-                  <div className="bg-black/40 p-4 rounded-2xl border border-white/10 space-y-3">
-                    <span className="text-[9px] font-mono text-white/40 tracking-widest uppercase block">
-                      Authorizing Officer Sign-Off
-                    </span>
-                    
-                    {/* Stylized Signature */}
-                    <div className="py-1">
-                      <p className="font-editorial text-2xl text-cyan-300 italic tracking-wider">
-                        Kunal Saini
-                      </p>
-                      <div className="w-full h-px bg-gradient-to-r from-cyan-400/60 via-purple-400/40 to-transparent mt-1" />
-                    </div>
-
-                    <div>
-                      <p className="text-[11px] text-white/90 font-medium">Commanding Safe Space Officer</p>
-                      <p className="text-[9px] font-mono text-white/40">Auth: Kunal // Sovereign Radar Sanctuary</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Flap Stamp Box */}
-                <div className="pt-6 mt-6 border-t border-white/10 space-y-2">
-                  <div className="p-3 rounded-xl border border-dashed border-cyan-400/40 bg-cyan-950/20 text-center font-mono">
-                    <p className="text-[10px] font-bold text-cyan-300 tracking-widest uppercase">OFFICIALLY RATIFIED</p>
-                    <p className="text-[8px] text-white/50 tracking-wider mt-0.5">NOVEMBER 07 • ALL FREQUENCIES SECURED</p>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  );
-};
-
-interface ErrorBoundaryProps {
-  children: React.ReactNode;
-}
-
-interface ErrorBoundaryState {
-  hasError: boolean;
-}
-
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error: any, errorInfo: any) {
-    console.error("Dashboard caught error:", error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="relative z-50 flex flex-col items-center justify-center min-h-screen text-white p-8 text-center">
-          <h2 className="text-2xl font-editorial mb-4">Telemetric Alignment Reset</h2>
-          <p className="text-white/60 mb-6 text-sm">A telemetry synchronization event occurred.</p>
-          <button
-            onClick={() => this.setState({ hasError: false })}
-            className="px-6 py-3 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 transition-all cursor-pointer"
-          >
-            Re-align Dashboard
-          </button>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
+const clips = Array.from({ length: 17 }, (_, i) => `/video/${i + 1}.mp4`);
 
 export default function App() {
-  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [open, setOpen] = useState<{ title: string; body: string } | null>(null);
+  const [roseCount, setRoseCount] = useState(0);
+  const [photo, setPhoto] = useState<number | null>(null);
+  const [clip, setClip] = useState<number | null>(null);
+  const [started, setStarted] = useState(false);
+  const [songPlaying, setSongPlaying] = useState(false);
+  const songPlayingRef = useRef(false);
+  const [mediaFocus, setMediaFocus] = useState<{ kind: 'video' | 'image'; index: number } | null>(null);
 
-  return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: customStyles }} />
-      
-      {/* Universal Background */}
-      <div className="astra-bg">
-        <div className="mesh-gradient"></div>
-      </div>
-      <div className="noise-overlay"></div>
-      
-      {/* Routing State */}
-      <ErrorBoundary>
-        {!isUnlocked ? (
-          <AIIntroSequence onComplete={() => setIsUnlocked(true)} />
-        ) : (
-          <BentoDashboard />
-        )}
-      </ErrorBoundary>
-    </>
-  );
+  const focusMediaForPage = (pageIndex: number) => {
+    const kind = pageIndex === 0 ? 'video' : pageIndex === 2 ? 'image' : null;
+    if (!kind) { setMediaFocus(current => current ? null : current); return; }
+    const selector = kind === 'video' ? '.film-card' : '.memory';
+    const cards = Array.from(document.querySelectorAll<HTMLElement>(selector));
+    if (!cards.length) return;
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    const index = cards.map((card, index) => {
+      const rect = card.getBoundingClientRect();
+      return { index, distance: Math.hypot(rect.left + rect.width / 2 - centerX, rect.top + rect.height / 2 - centerY) };
+    }).sort((a, b) => a.distance - b.distance)[0].index;
+    setMediaFocus(current => current?.kind === kind && current.index === index ? current : { kind, index });
+  };
+
+  useEffect(() => {
+    const sections = document.querySelectorAll<HTMLElement>('.reveal-chapter');
+    const ordered = Array.from(sections);
+    let starts: number[] = [];
+    const measurePages = () => {
+      starts = ordered.map(page => page.getBoundingClientRect().top + window.scrollY);
+      updatePage();
+    };
+    const updatePage = () => {
+      const roseChapterIndex = ordered.findIndex(page => page.id === 'roses');
+      const nextChapterStart = starts[roseChapterIndex + 1];
+      const roseChapter = ordered[roseChapterIndex];
+      if (roseChapter && nextChapterStart !== undefined && roseChapter.dataset.rosesComplete !== 'true') {
+        const gatePosition = nextChapterStart - window.innerHeight * .9 - 1;
+        if (window.scrollY > gatePosition) {
+          window.scrollTo(0, gatePosition);
+          return;
+        }
+      }
+      const edge = window.scrollY + window.innerHeight * .9;
+      let currentIndex = -1;
+      starts.forEach((start, index) => { if (edge >= start) currentIndex = index; });
+      ordered.forEach((page, index) => {
+        if (index <= currentIndex) page.classList.add('in-view');
+        page.classList.toggle('active-page', index === currentIndex);
+        page.classList.toggle('turned-page', index < currentIndex);
+        page.classList.toggle('waiting-page', index > currentIndex);
+      });
+      const film = document.querySelector<HTMLElement>('.film');
+      const track = document.querySelector<HTMLElement>('.film-grid');
+      if (film && track) {
+        const travel = Math.max(0, track.scrollWidth - window.innerWidth);
+        const progress = Math.min(1, Math.max(0, -film.getBoundingClientRect().top / Math.max(1, film.offsetHeight - window.innerHeight)));
+        track.style.transform = `translateX(${-travel * progress}px)`;
+      }
+      const gallery = document.querySelector<HTMLElement>('.gallery');
+      const photoTrack = document.querySelector<HTMLElement>('.gallery-grid');
+      if (gallery && photoTrack) {
+        const travel = Math.max(0, photoTrack.scrollWidth - window.innerWidth);
+        const progress = Math.min(1, Math.max(0, -gallery.getBoundingClientRect().top / Math.max(1, gallery.offsetHeight - window.innerHeight)));
+        photoTrack.style.transform = `translateX(${-travel * progress}px)`;
+      }
+      const story = document.querySelector<HTMLElement>('.dreams');
+      const storyTrack = document.querySelector<HTMLElement>('.dream-story-track');
+      if (story && storyTrack) {
+        const travel = Math.max(0, story.offsetHeight - window.innerHeight);
+        const progress = Math.min(1, Math.max(0, -story.getBoundingClientRect().top / Math.max(1, travel)));
+        storyTrack.style.transform = `translateY(${-travel * progress}px)`;
+        const activeScene = Math.min(2, Math.floor(progress * 2 + .001));
+        storyTrack.querySelectorAll('.dream-scene').forEach((scene, index) => scene.classList.toggle('is-current', index === activeScene));
+        if ((currentIndex !== 3 || activeScene !== 2) && songPlayingRef.current) {
+          songPlayingRef.current = false;
+          setSongPlaying(false);
+        }
+      }
+      focusMediaForPage(currentIndex);
+    };
+    measurePages();
+    window.addEventListener('scroll', updatePage, { passive: true });
+    window.addEventListener('resize', measurePages);
+    document.fonts?.ready.then(measurePages);
+    return () => {
+      window.removeEventListener('scroll', updatePage);
+      window.removeEventListener('resize', measurePages);
+    };
+  }, []);
+  useEffect(() => {
+    const filmTrack = document.querySelector('.film-grid');
+    const photoTrack = document.querySelector('.gallery-grid');
+    const onFilmScroll = () => { if (document.getElementById('movie')?.classList.contains('active-page')) focusMediaForPage(0); };
+    const onPhotoScroll = () => { if (document.getElementById('memories')?.classList.contains('active-page')) focusMediaForPage(2); };
+    filmTrack?.addEventListener('scroll', onFilmScroll, { passive: true });
+    photoTrack?.addEventListener('scroll', onPhotoScroll, { passive: true });
+    return () => {
+      filmTrack?.removeEventListener('scroll', onFilmScroll);
+      photoTrack?.removeEventListener('scroll', onPhotoScroll);
+    };
+  }, []);
+  const goToMovie = () => { setStarted(true); document.getElementById('movie')?.scrollIntoView({ behavior: 'smooth' }); };
+  const toggleSong = () => setSongPlaying(current => { songPlayingRef.current = !current; return !current; });
+
+  const reveal = (title: string, body: string) => setOpen({ title, body });
+  const notes = [
+    'I hope today has your favourite film, something delicious, and absolutely no plans you did not choose.',
+    'I like the way you notice things other people miss. Keep showing me the world through your eyes.',
+    'For your birthday: the blue roses you wanted, and a year that feels a little more like yours.',
+  ];
+
+  return <>
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap');
+      *{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;background:#f8f5f0;color:#202b35;font-family:'Manrope',sans-serif} button{font:inherit;color:inherit} button:focus-visible{outline:3px solid #386ca5;outline-offset:3px}.pill:disabled{cursor:default;opacity:.78;transform:none}
+      .page{overflow:clip}.top{position:fixed;z-index:20;top:14px;left:50%;transform:translateX(-50%);width:min(94%,1050px);display:flex;align-items:center;justify-content:space-between;padding:10px 14px 10px 20px;border:1px solid #d5dce4;border-radius:99px;background:#fff;color:#273849;box-shadow:0 8px 30px #253a5615}.brand{font-weight:700;font-size:13px;letter-spacing:.04em}.top a{font-size:12px;color:#3d4b58;text-decoration:none;margin:0 9px}.top button,.pill{border:0;border-radius:99px;padding:11px 17px;background:#24466f;color:#fff;cursor:pointer;transition:.2s}.top button:hover,.pill:hover{transform:translateY(-2px);background:#18385f}
+      .hero,section,.footer{min-height:100svh;position:relative}.hero{display:grid;place-items:center;text-align:center;padding:100px 24px 60px;background:#f4f6f8}@keyframes float{50%{transform:translateY(-8px)}}
+      .hero-inner{max-width:840px;position:relative;z-index:1}.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:#395c81;font-weight:700}.hero h1{color:#202b35;font:400 clamp(64px,11vw,132px)/.88 'Instrument Serif',Georgia,serif;letter-spacing:-.035em;margin:24px 0 16px}.hero h1 em{color:#315c8b;font-weight:400}.hero p{font:italic 23px 'Instrument Serif',Georgia,serif;color:#354452;margin:15px 0 32px}.hint{margin-top:28px;font-size:11px;color:#3b4854;letter-spacing:.08em}.float-rose{color:#315f9c;display:inline-block;animation:float 3s ease-in-out infinite}
+      section{padding:100px 24px}.wrap{width:min(100%,1050px);margin:auto}.section-head{margin-bottom:25px}.section-head small{color:#294e75;text-transform:uppercase;letter-spacing:.14em;font-size:11px;font-weight:700}.section-head h2{font:400 clamp(37px,5vw,60px)/1.03 'Instrument Serif',Georgia,serif;margin:10px 0;color:#202b35}.section-head p{color:#33414e;max-width:570px;line-height:1.7}.film{background:#e5edf6;color:#202b35;position:relative}.film .section-head small{color:#294e75}.film .section-head p{color:#33414e}.film-grid{display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;padding:8px 4px 24px;scroll-snap-type:x mandatory;scrollbar-color:#879bb3 transparent}.film-card{flex:0 0 clamp(220px,23vw,270px);scroll-snap-align:start;border:1px solid #c4d0dc;background:#fff;color:#202b35;text-align:left;padding:0;border-radius:18px;overflow:hidden;cursor:pointer;transition:.25s;box-shadow:0 7px 24px #24395112}.film-card:hover{transform:translateY(-4px);background:#fff;box-shadow:0 12px 28px #24395120}.film-card video{width:100%;height:clamp(150px,22vh,205px);object-fit:cover;display:block;background:#152237}.film-label{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;font-size:13px}.film-label span:last-child{color:#294e75}
+      .bouquet{background:linear-gradient(145deg,#f1f5fa,#e4edf7 55%,#f7f8fa)}.bouquet-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:clamp(28px,6vw,74px);align-items:center}.bouquet-art{min-height:clamp(390px,62vh,610px);border-radius:30px;background:#d7e2ef;position:relative;overflow:hidden;box-shadow:0 28px 70px #203c5b25}.bouquet-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 55%;transition:transform 1s ease}.bouquet-art:hover .bouquet-photo{transform:scale(1.035)}.bouquet-art:after{content:'';position:absolute;inset:45% 0 0;background:linear-gradient(transparent,#17294355);pointer-events:none}.rose{position:absolute;z-index:1;width:clamp(48px,7vw,76px);aspect-ratio:1;border:2px solid #fff;border-radius:50%;overflow:hidden;box-shadow:0 8px 22px #132d4d55;animation:rise 1s cubic-bezier(.2,.75,.25,1) both;pointer-events:none}.rose img{width:100%;height:100%;object-fit:cover;filter:saturate(.45) brightness(1.18);transition:filter .35s}.rose-count{margin:12px 0 0;color:#345675;font-size:12px;letter-spacing:.08em;text-transform:uppercase}.bouquet-credit{margin:8px 0 0;font-size:10px;line-height:1.5;color:#66798c}.bouquet-copy{line-height:1.8;color:#354452}.bouquet-copy h2{font:400 48px 'Instrument Serif',Georgia,serif;color:#202a34;line-height:1.02}.bouquet-copy .pill{margin-top:10px}@keyframes rise{from{transform:translateY(35px) scale(.4);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+      .gallery{background:#f7f6f2}.gallery-grid{display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;padding:8px 4px 24px;scroll-snap-type:x mandatory;scrollbar-color:#879bb3 transparent}.memory{flex:0 0 clamp(220px,23vw,270px);border:0;padding:0;background:white;text-align:left;border-radius:18px;overflow:hidden;box-shadow:0 10px 30px #27395312;cursor:pointer;transition:.25s;scroll-snap-align:center}.memory:hover{transform:translateY(-5px);box-shadow:0 16px 35px #27395322}.memory img{width:100%;height:245px;display:block;object-fit:cover;background:#e7e9eb}.memory span{display:block;padding:13px 14px;font:italic 18px 'Instrument Serif',Georgia,serif;color:#283846}.gallery-count{display:inline-flex;align-items:center;gap:7px;margin-top:6px;padding:8px 12px;border:1px solid #c9d5e1;border-radius:99px;color:#345675;background:#ffffffa8;font-size:11px;letter-spacing:.08em;text-transform:uppercase}.gallery.active-page .gallery-count{display:none}
+      .dreams{isolation:isolate;background:radial-gradient(ellipse at 12% 8%,#ffffffd9 0,transparent 38%),linear-gradient(145deg,#dce8f4,#edf2f7 58%,#e1eaf4);overflow:hidden}.dreams:before,.dreams:after{content:'';position:absolute;z-index:-1;border:1px solid #6687aa22;border-radius:50%;pointer-events:none}.dreams:before{width:390px;height:390px;right:-130px;top:-170px;box-shadow:0 0 0 28px #6687aa08,0 0 0 64px #6687aa06}.dreams:after{width:220px;height:220px;left:-120px;bottom:-105px;box-shadow:0 0 0 24px #6687aa08,0 0 0 52px #6687aa06}.story-wrap{position:relative;width:min(100%,1120px)}.story-heading{position:relative;z-index:1;max-width:780px;margin:0 auto 20px;text-align:center}.story-heading h2{font-size:clamp(40px,5.4vw,64px);letter-spacing:-.025em}.story-heading p{margin:10px auto 0;max-width:650px}.story-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;position:relative}.story-beat{position:relative;min-height:355px;overflow:hidden;padding:15px 19px 20px;border:1px solid #ffffffc9;border-radius:23px;text-align:left;color:#27384a;background:linear-gradient(148deg,#ffffffed,#f6f9fdeb 68%,#eaf1f9);box-shadow:0 18px 45px #304c6c12,inset 0 1px #fff;cursor:pointer;transition:transform .35s ease,box-shadow .35s ease,border-color .35s ease;opacity:0;transform:translateY(22px)}.story-beat:before{content:'';position:absolute;width:150px;height:150px;right:-70px;top:-75px;border-radius:50%;background:radial-gradient(circle,#acc8e75c,transparent 68%);transition:transform .6s ease}.story-beat:hover{transform:translateY(-7px);box-shadow:0 25px 55px #304c6c20,inset 0 1px #fff;border-color:#fff}.story-beat:hover:before{transform:scale(1.55)}.story-beat:focus-visible{outline:3px solid #386ca5;outline-offset:4px}.story-beat .story-topline{display:flex;align-items:center;gap:11px;position:relative;z-index:1}.story-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:12px;color:#315f8c;background:linear-gradient(145deg,#e8f1fb,#d7e5f4);box-shadow:inset 0 1px #fff,0 6px 14px #315f8c13}.story-index{font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:#54718f}.story-beat h3{position:relative;z-index:1;font:400 27px/1.05 'Instrument Serif',Georgia,serif;color:#23364a;margin:15px 0 8px}.story-beat p{position:relative;z-index:1;margin:0;color:#46586a;font-size:12px;line-height:1.65;max-width:310px}.story-more{position:relative;z-index:1;display:inline-flex;align-items:center;gap:6px;margin-top:14px;color:#315f8c;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}.story-art{height:122px;position:relative;overflow:hidden;border-radius:16px;margin-bottom:18px;isolation:isolate}.sky-art{background:linear-gradient(180deg,#dceafa 0%,#eff4fa 56%,#c3d8ee 100%)}.sky-art:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 49.8%,#fff7 50%,transparent 50.2%);opacity:.7}.sky-sun{position:absolute;width:48px;height:48px;left:50%;top:47%;translate:-50% -50%;border-radius:50%;background:radial-gradient(circle at 36% 32%,#fff,#e8effa 56%,#9dbbe0);box-shadow:0 0 0 9px #ffffff45,0 0 38px 15px #a6c3e755;animation:sun-rise 5s ease-in-out infinite alternate}.sky-orbit{position:absolute;left:50%;top:48%;width:175px;height:54px;border:1px solid #597ca144;border-radius:50%;transform:translate(-50%,-50%) rotate(-13deg)}.sky-orbit.orbit-two{width:225px;height:74px;transform:translate(-50%,-50%) rotate(12deg);border-color:#fff9}.sky-star{position:absolute;left:calc(50% + 78px);top:18px;color:#315f8c;font-size:17px;animation:star-pulse 2s ease-in-out infinite}.sky-horizon{position:absolute;left:0;right:0;bottom:0;height:26px;background:linear-gradient(180deg,transparent,#7898b524)}@keyframes sun-rise{from{top:58%;scale:.86}to{top:39%;scale:1.08}}@keyframes star-pulse{50%{opacity:.35;transform:scale(.7) rotate(35deg)}}.memory-art{display:grid;place-items:center;background:linear-gradient(145deg,#e9eff6,#d5e4f2)}.memory-art:before,.memory-art:after{content:'';position:absolute;width:100px;height:72px;border-radius:5px;background:#fff;box-shadow:0 8px 18px #2945621a}.memory-art:before{transform:translate(-25px,4px) rotate(-10deg);animation:memory-back 4.5s ease-in-out infinite alternate}.memory-art:after{transform:translate(20px,-3px) rotate(8deg);animation:memory-front 4.5s ease-in-out infinite alternate}.memory-frame{position:relative;z-index:1;width:106px;height:78px;padding:6px 6px 16px;background:#fff;border-radius:4px;box-shadow:0 10px 24px #29456230;transform:rotate(-2deg);animation:memory-float 4s ease-in-out infinite}.memory-frame:before{content:'';display:block;width:100%;height:100%;background:radial-gradient(circle at 70% 33%,#fff9 0 3px,transparent 4px),linear-gradient(145deg,transparent 46%,#7996b8 47% 49%,transparent 50%),linear-gradient(35deg,#a9c3dc 0 38%,#d9e7f3 39% 58%,#7898b8 59%);border-radius:2px}.memory-frame:after{content:'little things';position:absolute;bottom:2px;left:0;right:0;text-align:center;color:#506984;font:italic 10px 'Instrument Serif',Georgia,serif}@keyframes memory-back{to{transform:translate(-42px,0) rotate(-15deg)}}@keyframes memory-front{to{transform:translate(36px,-5px) rotate(13deg)}}@keyframes memory-float{50%{transform:translateY(-4px) rotate(1deg)}}.film-art{display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#203953,#3e5d7d);box-shadow:inset 0 0 45px #11253e55}.film-strip{display:flex;gap:5px;padding:15px 0;width:130%;transform:rotate(-7deg);background:repeating-linear-gradient(90deg,#e3edf7 0 10px,transparent 10px 19px) top left/100% 5px no-repeat,repeating-linear-gradient(90deg,#e3edf7 0 10px,transparent 10px 19px) bottom left/100% 5px no-repeat;animation:film-roll 9s linear infinite}.film-cell{flex:0 0 69px;height:52px;border:3px solid #d8e4f0;background:linear-gradient(145deg,#a9bfd6,#526f90 58%,#233e5d);position:relative;overflow:hidden}.film-cell:nth-child(2n){background:linear-gradient(35deg,#6a87a5,#d6e2ed 48%,#748da8)}.film-cell:after{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,#fff7 50%,transparent 67%);transform:translateX(-120%);animation:film-glint 3.8s ease-in-out infinite}.film-cell:nth-child(2):after{animation-delay:1.2s}.film-cell:nth-child(3):after{animation-delay:2.4s}@keyframes film-roll{to{translate:-30px 0}}@keyframes film-glint{45%,100%{transform:translateX(120%)}}.reveal-chapter.in-view .story-beat{animation:story-arrive .75s cubic-bezier(.2,.75,.25,1) both}.reveal-chapter.in-view .story-beat:nth-child(2){animation-delay:.16s}.reveal-chapter.in-view .story-beat:nth-child(3){animation-delay:.32s}@keyframes story-arrive{to{opacity:1;transform:translateY(0)}}
+      .letter{background:#f7f6f2}.letter-card{max-width:760px;margin:auto;background:linear-gradient(145deg,#fff,#fdfcf9);border:1px solid #d5dce4;border-radius:24px;padding:clamp(26px,6vw,55px);box-shadow:0 20px 65px #463e3210;position:relative}.letter-card:before{content:'“';font:100px 'Instrument Serif',Georgia,serif;color:#b8cbe0;position:absolute;right:28px;top:8px;pointer-events:none}.letter-card h2{font:400 46px 'Instrument Serif',Georgia,serif;margin:0 0 18px}.letter-card p{font:20px/1.7 'Instrument Serif',Georgia,serif;color:#384650;min-height:70px}.notes-list{margin:12px 0 18px}.note-snippet{display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:start;padding:12px 0;border-bottom:1px solid #dce1e6}.note-snippet>span{padding-top:3px;font-size:11px;letter-spacing:.12em;color:#496786}.letter-card .note-snippet p{min-height:0;margin:0;font:19px/1.5 'Instrument Serif',Georgia,serif;color:#384650}.letter-card p.signoff{min-height:0;margin:18px 0 0;font:15px/1.65 'Manrope',sans-serif;color:#384650}
+      .overlay{position:fixed;z-index:30;inset:0;background:#101725d9;display:grid;place-items:center;padding:22px;backdrop-filter:blur(10px)}.modal{width:min(100%,620px);background:#fffdf7;border-radius:24px;padding:32px;position:relative;box-shadow:0 30px 100px #0005}.modal h2{font:400 42px 'Instrument Serif',Georgia,serif;margin:0 42px 12px 0}.modal p{line-height:1.8;color:#33414e}.close{position:absolute;right:15px;top:15px;width:44px;height:44px;border:0;background:#f0eee8;border-radius:50%;display:grid;place-items:center;cursor:pointer}.lightbox img{max-height:78vh;max-width:88vw;object-fit:contain;border-radius:14px}.video-modal video{width:min(85vw,850px);max-height:78vh;border-radius:16px;background:#111}.lightbox .close,.video-modal .close{background:#fff;right:-8px;top:-8px}
+      /* Keep the film's full-screen cards, and use downward page scrolling to advance them. */
+      .film.active-page,.gallery.active-page{padding:0;background:#101725!important;color:#fff}
+      .film.active-page .wrap,.gallery.active-page .wrap{width:100%;height:100%;max-width:none;position:relative}
+      .film.active-page .section-head,.gallery.active-page .section-head{position:absolute;z-index:2;top:72px;left:clamp(20px,5vw,72px);margin:0;padding:16px 20px;max-width:min(600px,88vw);border-radius:16px;background:#f8f5f0ed;box-shadow:0 8px 32px #0002}
+      .film.active-page .section-head h2,.gallery.active-page .section-head h2{font-size:clamp(30px,4vw,48px)}
+      .film.active-page .section-head p,.gallery.active-page .section-head p{margin-bottom:0}
+      .film.active-page .film-grid,.gallery.active-page .gallery-grid{position:absolute;inset:0;padding:0;gap:0;scroll-snap-type:x mandatory;scrollbar-width:none}
+      .film.active-page .film-card,.gallery.active-page .memory{position:relative;flex:0 0 100vw;width:100vw;height:100%;border:0;border-radius:0;background:#101725;box-shadow:none;scroll-snap-align:start;transform:none}
+      .film.active-page .film-card video,.gallery.active-page .memory img{position:absolute;inset:0;width:100%;height:100%;max-height:none;object-fit:contain;background:#101725}
+      .film.active-page .film-label,.gallery.active-page .memory span{position:absolute;z-index:1;bottom:28px;left:50%;transform:translateX(-50%);color:white;background:#101725b8;border-radius:99px;padding:12px 18px;white-space:nowrap;text-shadow:0 1px 8px #000}
+      .film.reveal-chapter{z-index:1;background-color:#f5f1e8}.bouquet.reveal-chapter{z-index:2;background-color:#eef2f6}.gallery.reveal-chapter{z-index:3;background-color:#f7f4ec}.dreams.reveal-chapter{z-index:4;background-color:#edf1f4}.letter.reveal-chapter{z-index:5;background-color:#f7f4ec}.footer.reveal-chapter{z-index:6}
+      .reveal-chapter{position:sticky;top:0;height:100svh;min-height:600px;max-height:100svh;display:flex;align-items:center;justify-content:center;transform-origin:left center;backface-visibility:hidden;perspective:1600px;overflow:hidden;background-image:linear-gradient(90deg,#33445d18 0,transparent 3.5%,transparent 100%);border-left:1px solid #d9d5cb;box-shadow:0 18px 55px #18253720;opacity:0;transition:opacity .7s ease,transform .9s cubic-bezier(.2,.75,.25,1)}
+      .reveal-chapter .wrap{max-height:100%;overflow:visible}
+      .reveal-chapter.in-view .section-head,.reveal-chapter.in-view .film-card,.reveal-chapter.in-view .bouquet-art,.reveal-chapter.in-view .bouquet-copy,.reveal-chapter.in-view .memory,.reveal-chapter.in-view .dream,.reveal-chapter.in-view .letter-card,.reveal-chapter.in-view>div{opacity:1;transform:translateY(0) scale(1);transition:opacity .75s ease,transform .8s cubic-bezier(.2,.75,.25,1)}
+      .reveal-chapter.waiting-page{opacity:0;transform:perspective(1600px) rotateY(14deg) translateX(52px) scale(.97);pointer-events:none}
+      .reveal-chapter.active-page{opacity:1;transform:perspective(1600px) rotateY(0) translateX(0) scale(1);pointer-events:auto}
+      .reveal-chapter.turned-page{opacity:0;transform:perspective(1600px) rotateY(-16deg) translateX(-42px) scale(.97);pointer-events:none}
+      .reveal-chapter:not(.in-view) .section-head,.reveal-chapter:not(.in-view) .film-card,.reveal-chapter:not(.in-view) .bouquet-art,.reveal-chapter:not(.in-view) .bouquet-copy,.reveal-chapter:not(.in-view) .memory,.reveal-chapter:not(.in-view) .dream,.reveal-chapter:not(.in-view) .letter-card,.reveal-chapter:not(.in-view)>div{opacity:0;transform:translateY(42px) scale(.97)}
+      .film.active-page .film-card:nth-child(2){transition-delay:.08s}.film.active-page .film-card:nth-child(3){transition-delay:.16s}.film.active-page .film-card:nth-child(4){transition-delay:.24s}.gallery.active-page .memory:nth-child(2){transition-delay:.1s}.gallery.active-page .memory:nth-child(3){transition-delay:.2s}.gallery.active-page .memory:nth-child(4){transition-delay:.3s}.dreams.active-page .dream:nth-child(2){transition-delay:.12s}.dreams.active-page .dream:nth-child(3){transition-delay:.24s}
+      /* The film and photo chapters span one viewport per item; each pinned canvas advances as the page scrolls down. */
+      .film.reveal-chapter{position:relative;top:auto;height:calc(100svh * var(--clip-count));min-height:calc(100svh * var(--clip-count));max-height:none;display:block;overflow:visible;transform:none!important;perspective:none;backface-visibility:visible;opacity:1;border:0;box-shadow:none;background-image:none}
+      .film.reveal-chapter.waiting-page,.film.reveal-chapter.turned-page{opacity:1;pointer-events:auto}
+      .film.reveal-chapter .wrap{position:sticky;top:0;width:100%;height:100svh;max-height:none;overflow:hidden;margin:0;padding:0}
+      .film.reveal-chapter .section-head{position:absolute;z-index:2;top:72px;left:clamp(20px,5vw,72px);margin:0;padding:16px 20px;max-width:min(600px,88vw);border-radius:16px;background:#f8f5f0ed;box-shadow:0 8px 32px #0002}
+      .film.reveal-chapter .section-head p{margin-bottom:0}
+      .film.reveal-chapter .film-grid{position:absolute;inset:0;display:flex;gap:0;padding:0;overflow:visible;scroll-snap-type:none;transform:translateX(0);will-change:transform}
+      .film.reveal-chapter .film-card{position:relative;flex:0 0 100vw;width:100vw;height:100%;border:0;border-radius:0;background:#101725;box-shadow:none;scroll-snap-align:none;transform:none}
+      .film.reveal-chapter .film-card video{position:absolute;inset:0;width:100%;height:100%;max-height:none;object-fit:contain;background:#101725}
+      .film.reveal-chapter .film-label{position:absolute;z-index:1;bottom:28px;left:50%;transform:translateX(-50%);color:#fff;background:#101725b8;border-radius:99px;padding:12px 18px;white-space:nowrap;text-shadow:0 1px 8px #000}
+      .gallery.reveal-chapter{position:relative;top:auto;height:calc(100svh * var(--photo-count));min-height:calc(100svh * var(--photo-count));max-height:none;display:block;overflow:visible;transform:none!important;perspective:none;backface-visibility:visible;opacity:1;border:0;box-shadow:none;background-image:none}
+      .gallery.reveal-chapter.waiting-page,.gallery.reveal-chapter.turned-page{opacity:1;pointer-events:auto}
+      .gallery.reveal-chapter .wrap{position:sticky;top:0;width:100%;height:100svh;max-height:none;overflow:hidden;margin:0;padding:0}
+      .gallery.reveal-chapter .section-head{position:absolute;z-index:2;top:72px;left:clamp(20px,5vw,72px);margin:0;padding:16px 20px;max-width:min(600px,88vw);border-radius:16px;background:#f8f5f0ed;box-shadow:0 8px 32px #0002}
+      .gallery.reveal-chapter .section-head p{margin-bottom:0}
+      .gallery.reveal-chapter .gallery-count{display:none}
+      .gallery.reveal-chapter .gallery-grid{position:absolute;inset:0;display:flex;gap:0;padding:0;overflow:visible;scroll-snap-type:none;transform:translateX(0);will-change:transform}
+      .gallery.reveal-chapter .memory{position:relative;flex:0 0 100vw;width:100vw;height:100%;border:0;border-radius:0;background:#101725;box-shadow:none;scroll-snap-align:none;transform:none}
+      .gallery.reveal-chapter .memory img{position:absolute;inset:0;width:100%;height:100%;max-height:none;object-fit:contain;background:#101725}
+      .gallery.reveal-chapter .memory span{position:absolute;z-index:1;bottom:28px;left:50%;transform:translateX(-50%);color:#fff;background:#101725b8;border-radius:99px;padding:12px 18px;white-space:nowrap;text-shadow:0 1px 8px #000}
+      @media(max-width:760px){.top{top:9px;padding:8px 10px 8px 15px}.top a{display:none}.top button{padding:10px 14px}.film-grid{max-height:none}.film-card{flex-basis:76vw}.film-card video{height:150px}.gallery-grid{display:flex}.memory{flex-basis:76vw}.memory img{height:155px}.bouquet-grid{grid-template-columns:1fr;gap:12px}.bouquet-art{min-height:160px}.bloom svg{width:105px;height:135px}.section-head{margin-bottom:14px}.section-head h2{font-size:35px}section{padding:72px 20px}}
+      @media(max-width:760px){.film.reveal-chapter .section-head,.gallery.reveal-chapter .section-head{top:70px;left:16px}.film.reveal-chapter .film-card,.gallery.reveal-chapter .memory{height:100%}}
+      .footer{background:#e5edf6;color:#202b35}.footer.reveal-chapter{flex-direction:column;gap:8px;padding:55px 22px 38px}.footer h2{margin:8px 0;font-size:clamp(32px,5vw,48px)}.footer p{color:#33414e;margin:0 0 10px}.footer-icons{display:flex;justify-content:center;align-items:center;gap:18px;color:#315f9c}.modal p{color:#33414e}
+      @media(max-width:760px){.bouquet-grid{gap:14px}.bouquet-art{min-height:155px}.bouquet-copy{font-size:14px;line-height:1.55}.bouquet-copy h2{font-size:38px}.dreams.reveal-chapter{padding:16px}.dreams.reveal-chapter .wrap{width:100%}.story-heading{margin-bottom:8px;text-align:left}.story-heading h2{font-size:clamp(33px,8.5vw,42px);margin:6px 0}.story-heading p{font-size:11px;line-height:1.45;margin:6px 0 0}.story-grid{grid-template-columns:1fr;gap:7px}.story-beat{min-height:0;padding:8px 10px;border-radius:15px;display:grid;grid-template-columns:30px 1fr;column-gap:9px;align-items:center}.story-art{grid-column:1 / -1;height:54px;margin-bottom:2px;border-radius:11px}.story-topline{display:contents!important}.story-icon{grid-row:2 / span 3;width:30px;height:30px;border-radius:10px}.story-icon svg{width:17px;height:17px}.story-index{font-size:8px;align-self:end}.story-beat h3{font-size:19px;margin:1px 0}.story-beat p{font-size:9px;line-height:1.3;max-width:none}.story-more{display:none}.letter-card{max-height:calc(100svh - 36px);overflow:auto;padding:24px}.letter-card h2{font-size:38px;margin-bottom:10px}.letter-card .note-snippet{padding:9px 0}.letter-card .note-snippet p{font-size:17px}.letter-card p.signoff{margin-top:12px;font-size:13px}}
+      @media(max-width:760px){.top{justify-content:center;gap:8px;padding:8px 10px}.brand{display:none}.top a{display:inline-block;margin:0 4px;font-size:10px}.top button{padding:8px 10px;font-size:10px;white-space:nowrap}}
+      /* Three scroll-led scenes replace the old tappable story cards. */
+      .dreams.reveal-chapter{position:relative;top:auto;height:300svh;min-height:300svh;max-height:none;display:block;overflow:visible;transform:none!important;perspective:none;backface-visibility:visible;opacity:1;border:0;box-shadow:none;background-image:none;padding:0}
+      .dreams.reveal-chapter.waiting-page,.dreams.reveal-chapter.turned-page{opacity:1;pointer-events:auto}
+      .dream-story-stage{position:sticky;top:0;height:100svh;overflow:hidden;background:linear-gradient(140deg,#e8eff7,#f5f5f0 55%,#dce8f4)}
+      .dream-story-track{position:absolute;inset:0;display:flex;flex-direction:column;height:300svh;will-change:transform}
+      .dream-scene{position:relative;flex:0 0 100svh;height:100svh;min-height:0;padding:clamp(76px,10vh,110px) clamp(24px,7vw,100px) 34px;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:clamp(30px,6vw,88px);align-items:center;overflow:hidden}
+      .dream-scene:before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.38;background:radial-gradient(ellipse at 15% 80%,#ffffffc7,transparent 42%)}
+      .dream-scene:nth-child(2){background:linear-gradient(135deg,#f1eee7,#e8edf2 55%,#d6e4f0)}.dream-scene:nth-child(3){background:linear-gradient(135deg,#172a40,#253e59 56%,#39516d)}
+      .dream-visual{height:min(65vh,570px);min-height:330px;width:100%;position:relative;overflow:hidden;border-radius:30px;isolation:isolate;box-shadow:0 28px 70px #263d591e;opacity:.35;transform:scale(.94);transition:opacity .8s ease,transform 1s cubic-bezier(.2,.75,.25,1)}
+      .dream-scene.is-current .dream-visual{opacity:1;transform:scale(1)}
+      .dream-copy{position:relative;z-index:1;max-width:540px;opacity:.28;transform:translateY(24px);transition:opacity .7s ease,transform .8s cubic-bezier(.2,.75,.25,1)}
+      .dream-scene.is-current .dream-copy{opacity:1;transform:translateY(0)}
+      .scene-kicker{display:flex;align-items:center;gap:8px;margin-bottom:22px;color:#54718f;font-size:10px;font-weight:700;letter-spacing:.15em;line-height:1.5;text-transform:uppercase}.scene-kicker span{display:grid;place-items:center;width:31px;height:31px;flex:0 0 31px;border:1px solid #6e8cac55;border-radius:50%;font:400 14px 'Instrument Serif',Georgia,serif;letter-spacing:0}
+      .dream-copy h2{margin:0 0 19px;color:#223449;font:400 clamp(42px,5.1vw,68px)/.98 'Instrument Serif',Georgia,serif;letter-spacing:-.025em}.dream-copy p{max-width:500px;margin:0 0 13px;color:#405265;font-size:14px;line-height:1.8}.story-cue,.story-ending{display:flex;align-items:center;gap:9px;margin-top:28px;color:#54718f;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}.story-cue svg{animation:cue-down 1.3s ease-in-out infinite}@keyframes cue-down{50%{transform:translateY(5px)}}.story-ending{font:italic 21px 'Instrument Serif',Georgia,serif;letter-spacing:0;text-transform:none;color:#d6e3f0}
+      .sky-visual{background:linear-gradient(180deg,#8daed1 0%,#d6e3f0 45%,#f4e6d1 100%)}.sky-visual:before{content:'';position:absolute;left:-12%;right:-12%;bottom:-11%;height:38%;border-radius:50% 50% 0 0;background:linear-gradient(180deg,#adbdc4,#718991);box-shadow:0 -32px 70px #fff5}
+      .sky-sunrise{position:absolute;z-index:-1;width:155px;height:155px;left:50%;top:64%;border-radius:50%;background:radial-gradient(circle,#fffce9 0 35%,#fff4d499 52%,transparent 72%);filter:blur(2px);transform:translate(-50%,-50%);animation:sun-breathe 6s ease-in-out infinite alternate}@keyframes sun-breathe{to{top:58%;scale:1.2}}
+      .sky-cloud{position:absolute;width:210px;height:30px;top:31%;left:-240px;border-radius:50%;background:#ffffff78;filter:blur(8px);animation:cloud-drift 24s linear infinite}.cloud-two{top:48%;width:165px;animation-duration:32s;animation-delay:-12s;opacity:.65}@keyframes cloud-drift{to{left:calc(100% + 250px)}}
+      .sky-horizon{position:absolute;left:0;right:0;bottom:21%;height:1px;background:linear-gradient(90deg,transparent,#fff9,transparent);box-shadow:0 0 25px 8px #fff5}.sky-trail{position:absolute;inset:8% 6% 12%;width:88%;height:80%;overflow:visible}.sky-trail path{fill:none;stroke:#fffbd8d9;stroke-width:2;stroke-dasharray:7 11;stroke-linecap:round;filter:drop-shadow(0 0 5px #fff);animation:trail-draw 5s ease-in-out infinite alternate}@keyframes trail-draw{from{stroke-dashoffset:150}to{stroke-dashoffset:0}}.sky-star{position:absolute;top:21%;right:23%;color:#fff8d8;font-size:25px;filter:drop-shadow(0 0 12px #fff);animation:star-glow 2.6s ease-in-out infinite alternate}@keyframes star-glow{to{opacity:.45;transform:scale(.72)}}
+      .visual-label{position:absolute;left:22px;bottom:20px;z-index:2;color:#fff;font-size:9px;font-weight:700;letter-spacing:.2em;text-shadow:0 1px 9px #192e4470}
+      .memory-visual{background:linear-gradient(145deg,#e4d7c4,#f1e9dd 47%,#b8c9d6)}.memory-visual:before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 48%,#fff9,transparent 52%),linear-gradient(0deg,#32485b24,transparent 45%)}.memory-light{position:absolute;width:300px;height:300px;left:50%;top:48%;border-radius:50%;background:#fff8;filter:blur(45px);transform:translate(-50%,-50%);animation:memory-light 5s ease-in-out infinite alternate}@keyframes memory-light{to{transform:translate(-50%,-50%) scale(1.28);opacity:.6}}
+      .memory-polaroids{position:absolute;inset:0;display:grid;place-items:center}.memory-polaroid{position:absolute;width:clamp(155px,19vw,220px);height:clamp(205px,27vw,285px);margin:0;padding:10px 10px 39px;border-radius:4px;background:#fffdf7;box-shadow:0 22px 48px #233b5440;transition:transform 1s cubic-bezier(.2,.75,.25,1)}.memory-polaroid img{width:100%;height:100%;object-fit:cover;display:block;background:#d9e1e8}.memory-polaroid figcaption{position:absolute;left:6px;right:6px;bottom:11px;text-align:center;color:#5b6570;font:italic 17px 'Instrument Serif',Georgia,serif}.memory-1{transform:translate(-18px,8px) rotate(-13deg)}.memory-2{transform:translate(16px,0) rotate(9deg)}.memory-3{transform:translate(0,16px) rotate(1deg)}.is-current .memory-1{animation:memory-one 5s ease-in-out infinite alternate}.is-current .memory-2{animation:memory-two 5.5s ease-in-out infinite alternate}.is-current .memory-3{animation:memory-three 4.6s ease-in-out infinite alternate}@keyframes memory-one{to{transform:translate(-76px,5px) rotate(-20deg)}}@keyframes memory-two{to{transform:translate(72px,-10px) rotate(16deg)}}@keyframes memory-three{to{transform:translate(0,-12px) rotate(-2deg)}}
+      .film-visual{background:radial-gradient(ellipse at 55% 44%,#627c96,#263c54 55%,#122338);box-shadow:0 30px 75px #16283c55}.projector-glow{position:absolute;left:50%;top:43%;width:65%;height:60%;border-radius:50%;background:#edc88a32;filter:blur(34px);transform:translate(-50%,-50%);animation:projector-pulse 3s ease-in-out infinite alternate}@keyframes projector-pulse{to{opacity:.5;scale:1.15}}
+      .sky-visual{display:block;background:linear-gradient(145deg,#9cb6ce,#d6e1e9 55%,#71879b)}.sky-visual:before{content:'';position:absolute;inset:0;background:linear-gradient(140deg,#152c4430,transparent 50%,#172c4440);opacity:1}.fighter-pair{position:absolute;inset:18px 18px 55px;display:grid;grid-template-columns:1.1fr .9fr;gap:13px}.jet-photo{position:relative;min-width:0;overflow:hidden;margin:0;border:1px solid #fff7;border-radius:18px;background:#324960;box-shadow:0 20px 42px #152b4160}.jet-photo img{display:block;width:100%;height:100%;object-fit:cover;filter:saturate(.83) contrast(1.03)}.jet-f22 img{object-position:54% center}.jet-f35 img{object-position:52% center}.jet-photo figcaption{position:absolute;inset:auto 0 0;padding:35px 14px 14px;display:flex;flex-direction:column;gap:3px;color:white;background:linear-gradient(transparent,#102237e8)}.jet-photo figcaption strong{font-size:12px;letter-spacing:.13em}.jet-photo figcaption span{font-size:9px;letter-spacing:.06em;color:#d4e0eb}.jet-f22{animation:jet-reveal .9s .1s both}.jet-f35{animation:jet-reveal .9s .28s both}@keyframes jet-reveal{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+      .reel{position:absolute;top:14%;width:75px;height:75px;border:8px solid #c5d0da;border-radius:50%;box-shadow:inset 0 0 0 7px #536b83,0 0 25px #fff2;animation:reel-turn 10s linear infinite}.reel:before,.reel:after{content:'';position:absolute;width:13px;height:13px;left:50%;top:50%;border:3px solid #d5dce2;border-radius:50%;transform:translate(-50%,-50%)}.reel:after{transform:translate(-50%,-50%) rotate(60deg) translateY(21px)}.reel-one{left:28%}.reel-two{right:28%;animation-direction:reverse}@keyframes reel-turn{to{rotate:360deg}}
+      .story-filmstrip{position:absolute;left:-10%;right:-10%;top:52%;display:flex;gap:8px;padding:14px 0;border-top:7px dashed #d9e1e8;border-bottom:7px dashed #d9e1e8;transform:rotate(-8deg);animation:film-glide 12s linear infinite}.story-filmstrip span{height:83px;flex:0 0 22%;border:4px solid #bdc9d5;background:linear-gradient(140deg,#d6b989,#647d93 53%,#293e56);box-shadow:inset 0 0 22px #14263b55}.story-filmstrip span:nth-child(2n){background:linear-gradient(30deg,#34495e,#aebdca 48%,#7f6c59)}@keyframes film-glide{to{translate:-62px 0}}.film-play{position:absolute;left:50%;top:53%;display:grid;place-items:center;width:58px;height:58px;border:1px solid #fff9;border-radius:50%;color:#fff8e8;background:#1b3048b8;box-shadow:0 0 0 12px #fff1,0 0 38px #edc88a55;transform:translate(-50%,-50%);animation:play-pulse 2.4s ease-in-out infinite alternate}@keyframes play-pulse{to{box-shadow:0 0 0 19px #fff0,0 0 50px #edc88a88}}
+      .movie-poster{position:relative;z-index:1;height:min(86%,450px);aspect-ratio:294/306;max-width:78%;margin:auto;padding:10px 10px 27px;background:#f4eee3;box-shadow:0 24px 55px #07152699;transform:rotate(-1.5deg)}.movie-poster img{display:block;width:100%;height:100%;object-fit:contain;background:#fff}.movie-poster figcaption{position:absolute;left:0;right:0;bottom:7px;text-align:center;color:#455262;font:italic 14px 'Instrument Serif',Georgia,serif}.movie-song-player{position:absolute;z-index:2;inset:7% 5%;width:90%;height:86%;border:0;border-radius:16px;background:#0b1725;box-shadow:0 24px 55px #07152699}.song-control{display:inline-flex;align-items:center;gap:9px;margin-top:8px;padding:10px 15px;border:1px solid #536c85;border-radius:99px;background:#243c56;color:#fff;cursor:pointer;box-shadow:0 8px 20px #11233824;transition:transform .2s,background .2s}.song-control:hover{transform:translateY(-2px);background:#304f70}.song-control svg{width:14px;height:14px}.film-scene .dream-copy h2,.film-scene .dream-copy p{color:#eef3f7}.film-scene .scene-kicker{color:#cad9e7}.film-scene .scene-kicker span{border-color:#a8bfd455}
+      @media(max-width:760px){.dreams.reveal-chapter{height:300svh;min-height:300svh;padding:0}.dream-story-stage{height:100svh}.dream-scene{padding:76px 20px 26px;grid-template-columns:1fr;grid-template-rows:minmax(190px,35svh) 1fr;gap:18px;align-content:center}.dream-visual{height:100%;min-height:0;max-height:285px;border-radius:22px}.dream-copy{max-width:none;align-self:start}.scene-kicker{font-size:8px;margin-bottom:12px}.scene-kicker span{width:27px;height:27px;flex-basis:27px}.dream-copy h2{font-size:clamp(37px,10vw,48px);margin-bottom:12px}.dream-copy p{font-size:12px;line-height:1.65;margin-bottom:9px}.story-cue{margin-top:16px;font-size:8px}.story-ending{font-size:19px;margin-top:16px}.memory-polaroid{width:min(42vw,175px);height:min(53vw,225px);padding:7px 7px 31px}.memory-polaroid figcaption{font-size:14px;bottom:8px}.fighter-pair{inset:10px 10px 43px;grid-template-columns:1fr 1fr;gap:7px}.jet-photo{border-radius:12px}.jet-photo figcaption{padding:23px 7px 8px}.jet-photo figcaption strong{font-size:8px;letter-spacing:.08em}.jet-photo figcaption span{font-size:7px}.movie-poster{height:88%;max-width:70%;padding:7px 7px 22px}.movie-poster figcaption{font-size:12px;bottom:5px}.movie-song-player{inset:5% 3%;width:94%;height:90%}.song-control{padding:8px 12px;font-size:11px}.reel{width:56px;height:56px;border-width:6px}.story-filmstrip span{height:65px}}
+      @media(max-height:700px) and (min-width:761px){.dream-scene{padding-top:75px;padding-bottom:22px;gap:32px}.dream-visual{height:57vh;min-height:260px}.dream-copy h2{font-size:clamp(38px,4.4vw,56px)}.dream-copy p{font-size:12px;line-height:1.6}.scene-kicker{margin-bottom:14px}}
+      @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+    `}</style>
+    <div className="page">
+      <nav className="top"><span className="brand">A NOTE FOR TANU</span><div><a href="#movie">The movie</a><a href="#roses">The roses</a><a href="#memories">Photos</a></div><button onClick={()=>document.getElementById('letter')?.scrollIntoView({behavior:'smooth'})}>Open your note</button></nav>
+      <header className="hero" id="home"><div className="hero-inner"><div className="eyebrow">Poornima Singh Rana · from Kunal</div><h1>Happy birthday,<br/><em>Tanu.</em></h1><p>Geet gets the rewatch. You get the blue roses.</p><div className="float-rose"><Heart size={48} strokeWidth={1.4} fill="#d8e7f7"/></div><div><button className="pill" onClick={goToMovie}>{started?'Your movie memories':'Start here'} <Play size={14} style={{verticalAlign:'middle',marginLeft:6}}/></button></div><div className="hint">MADE FOR YOUR BIRTHDAY</div></div></header>
+      <section className="film reveal-chapter" id="movie" style={{'--clip-count': clips.length} as React.CSSProperties}><div className="wrap"><div className="section-head"><small>Scene one · the Tanu cut</small><h2>Some moments deserve a replay.</h2><p>Scroll down through every clip. Each one takes the whole page.</p></div><div className="film-grid">{clips.map((src,i)=><button className="film-card" key={src} onClick={()=>setClip(i)} aria-label={`Play memory ${i+1}`}><video src={src} muted playsInline loop autoPlay preload="metadata"/><div className="film-label"><span>Memory no. {String(i+1).padStart(2,'0')}</span><span><Play size={15}/></span></div></button>)}</div></div></section>
+      <section className="bouquet reveal-chapter" id="roses" data-roses-complete={roseCount >= 19}><div className="wrap bouquet-grid"><div className="bouquet-art" aria-label={`A real blue-violet rose bouquet, ${roseCount} of 19 roses added`}><img className="bouquet-photo" src="/img/blue-rose-applause.jpg" alt="A bouquet of blue-violet Applause roses"/>{Array.from({length:roseCount},(_,i)=><span className="rose" key={i} style={{left:`${8+(i*29)%80}%`,top:`${8+(i*37)%78}%`,animationDelay:`${i*.04}s`}}><img src="/img/blue-rose-bouquet.jpg" alt=""/></span>)}</div><div className="bouquet-copy"><div className="section-head"><small>For your birthday wish</small><h2>Blue roses,<br/>as promised.</h2></div><p>Add 19 blue roses for your 19th birthday to unlock the next chapter.</p><button className="pill" disabled={roseCount >= 19} onClick={()=>setRoseCount(n=>Math.min(19,n+1))}>{roseCount >= 19 ? 'Your bouquet is complete' : 'Add a blue rose'}{roseCount < 19&&<Sparkles size={15} style={{verticalAlign:'middle',marginLeft:6}}/>}</button><div className="rose-count" aria-live="polite">{roseCount}/19 roses added{roseCount >= 19 ? ' · the next chapter is unlocked' : ' · add roses to continue'}</div><p className="bouquet-credit">Rose photos: Suntory Flowers (CC0); close-up by Missylaw (CC BY-SA 3.0).</p></div></div></section>
+      <section className="gallery reveal-chapter" id="memories" style={{'--photo-count': photos.length} as React.CSSProperties}><div className="wrap"><div className="section-head"><small>Scene three · the memory wall</small><h2>For the girl who says,<br/><em>“capture me as a memory.”</em></h2><p>Scroll down through every photo. Each frame takes the whole page.</p><div className="gallery-count"><Camera size={13}/> {photos.length} moments and counting</div></div><div className="gallery-grid">{photos.map((p,i)=><button className="memory" key={p.src} onClick={()=>setPhoto(i)} aria-label={`Open photo: ${p.label}`}><img src={p.src} alt={p.label} loading="lazy" decoding="async"/><span>{p.label}</span></button>)}</div></div></section>
+      <section className="dreams reveal-chapter" id="dreams"><div className="dream-story-stage"><div className="dream-story-track">
+        <article className="dream-scene sky-scene"><div className="dream-visual sky-visual"><div className="fighter-pair"><figure className="jet-photo jet-f22"><img src="/img/f22-raptor.jpg" alt="Two F-22 Raptor stealth fighters flying in formation" loading="lazy"/><figcaption><strong>F-22 RAPTOR</strong><span>Air superiority</span></figcaption></figure><figure className="jet-photo jet-f35"><img src="/img/f35-lightning.jpg" alt="U.S. Air Force F-35A Lightning II taking off" loading="lazy"/><figcaption><strong>F-35 LIGHTNING II</strong><span>Multirole stealth fighter</span></figcaption></figure></div><span className="visual-label">THE SKY SHE'S WORKING TOWARD</span></div><div className="dream-copy"><div className="scene-kicker"><span>01</span> · THE SKY SHE KEEPS LOOKING TOWARD</div><h2>There is a sky you keep looking toward.</h2><p>I know how much this dream means to you. You don’t need the whole map today; every lesson and every brave next step is still bringing you closer.</p><p>I hope you never make the dream smaller just because the journey takes time. Keep going at your own pace. I’ll be cheering for you.</p><div className="story-cue">SCROLL TO THE NEXT SCENE <ArrowDown size={14}/></div></div></article>
+        <article className="dream-scene memory-scene"><div className="dream-visual memory-visual" aria-hidden="true"><span className="memory-light"/><div className="memory-polaroids">{photos.slice(0,3).map((p,i)=><figure className={`memory-polaroid memory-${i+1}`} key={p.src}><img src={p.src} alt="" loading="lazy"/><figcaption>{i===0?'a day to keep':i===1?'just as you are':'little things, kept close'}</figcaption></figure>)}</div><span className="visual-label">DAYS THAT BECOME STORIES</span></div><div className="dream-copy"><div className="scene-kicker"><span>02</span> · THE MOMENTS YOU CHOOSE TO KEEP</div><h2>You said, “capture me as a memory.”</h2><p>I hope you never stop asking.</p><p>One day, these little photos will bring back more than how a day looked. They’ll remind you how much you laughed, how closely you noticed everything, and how fully you were there.</p><div className="story-cue">SCROLL TO THE NEXT SCENE <ArrowDown size={14}/></div></div></article>
+        <article className="dream-scene film-scene"><div className="dream-visual film-visual">{songPlaying?<iframe className="movie-song-player" src="https://www.youtube-nocookie.com/embed/mt9xg0mmt28?autoplay=1&controls=1&playsinline=1&rel=0" title="Tum Se Hi from Jab We Met, official T-Series video" allow="autoplay; encrypted-media; picture-in-picture" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen/>:<figure className="movie-poster"><img src="/img/jab-we-met-poster.jpg" alt="Jab We Met movie poster featuring Geet and Aditya"/><figcaption>Jab We Met · 2007</figcaption></figure>}<span className="visual-label">GEET & ADITYA · ONE MORE REWATCH</span></div><div className="dream-copy"><div className="scene-kicker"><span>03</span> · THE JOY YOU RETURN TO</div><h2>And then there are the stories that feel like home.</h2><p>Geet, a familiar scene, and you saying the line before she does.</p><p>Some days are for chasing the big dream. Some are for pressing play and letting yourself smile. I hope you always keep space for both. Joy belongs in the life you’re building.</p><button className="song-control" onClick={toggleSong}><Play size={15} fill="currentColor"/>{songPlaying?'Back to Geet & Aditya':'Play “Tum Se Hi”'}</button><div className="story-ending">Keep making room for all of it. The next chapter is yours.</div></div></article>
+      </div></div></section>
+      <section className="letter reveal-chapter" id="letter"><div className="letter-card"><div className="eyebrow">A note from Kunal</div><h2>Dear Tanu,</h2><div className="notes-list">{notes.map((text,index)=><article className="note-snippet" key={text}><span>0{index+1}</span><p>{text}</p></article>)}</div><p className="signoff">Happy birthday. I’m glad I get to know you, cheer you on, and make you smile when I can.<br/><br/>Kunal</p></div></section>
+      <footer className="footer reveal-chapter" id="ending"><div className="footer-icons"><Heart size={19} fill="#4779bd" color="#315f9c"/><Plane size={19}/><Clapperboard size={19}/></div><h2>Okay, one more rewatch.</h2><p>Happy birthday, Tanu. Love, Kunal.</p><button className="pill" onClick={()=>window.scrollTo({top:0,behavior:'smooth'})}>Back to the beginning <ArrowDown size={14} style={{verticalAlign:'middle',marginLeft:6,transform:'rotate(180deg)'}}/></button></footer>
+      {open&&<div className="overlay" onClick={()=>setOpen(null)}><article className="modal" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setOpen(null)} aria-label="Close"><X/></button><div className="eyebrow">A note for Tanu</div><h2>{open.title}</h2><p>{open.body}</p><button className="pill" onClick={()=>setOpen(null)}>Close note</button></article></div>}
+      {photo!==null&&<div className="overlay lightbox" onClick={()=>setPhoto(null)}><div style={{position:'relative'}} onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setPhoto(null)} aria-label="Close photo"><X/></button><img src={photos[photo].src} alt={photos[photo].label}/></div></div>}
+      {clip!==null&&<div className="overlay video-modal" onClick={()=>setClip(null)}><div style={{position:'relative'}} onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setClip(null)} aria-label="Close video"><X/></button><video src={clips[clip]} controls autoPlay playsInline style={{width:'min(85vw,850px)',maxHeight:'78vh',borderRadius:16,background:'#111'}}/></div></div>}
+    </div>
+  </>;
 }
