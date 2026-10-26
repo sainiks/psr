@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowDown, Camera, Clapperboard, Flame, Heart, Pause, Plane, Play, Sparkles, X } from 'lucide-react';
+import { ArrowDown, Camera, Clapperboard, Flame, Heart, Pause, Plane, Play, Sparkles, Volume2, VolumeX, X } from 'lucide-react';
 
 const photos = [
   { src: '/img/WhatsApp Image 2026-09-21 at 22.15.42.jpeg', label: 'One for the camera roll' },
@@ -17,6 +17,7 @@ export default function App() {
   const [roseCount, setRoseCount] = useState(0);
   const [photo, setPhoto] = useState<number | null>(null);
   const [clip, setClip] = useState<number | null>(null);
+  const [clipMuted, setClipMuted] = useState(false);
   const [started, setStarted] = useState(false);
   const [songPlaying, setSongPlaying] = useState(false);
   const songPlayingRef = useRef(false);
@@ -139,6 +140,7 @@ export default function App() {
 
   const openClip = (index: number) => {
     document.querySelectorAll<HTMLVideoElement>('.film-card video').forEach(video => { video.muted = true; video.pause(); });
+    setClipMuted(false);
     setClip(index);
   };
 
@@ -308,7 +310,7 @@ export default function App() {
       @keyframes floatPetal{0%{transform:translateY(100vh) rotate(0deg) scale(.6);opacity:0}20%{opacity:.95}80%{opacity:.85}100%{transform:translateY(-20vh) rotate(360deg) scale(1.1);opacity:0}}
       .floating-petal{position:fixed;bottom:-20px;font-size:22px;pointer-events:none;z-index:99;animation:floatPetal 4.5s cubic-bezier(.25,1,.5,1) forwards}
 
-      .overlay{position:fixed;z-index:30;inset:0;background:#101725d9;display:grid;place-items:center;padding:22px;backdrop-filter:blur(10px)}.modal{width:min(100%,620px);background:#fffdf7;border-radius:24px;padding:32px;position:relative;box-shadow:0 30px 100px #0005}.modal h2{font:400 42px 'Instrument Serif',Georgia,serif;margin:0 42px 12px 0}.modal p{line-height:1.8;color:#33414e}.close{position:absolute;right:15px;top:15px;width:44px;height:44px;border:0;background:#f0eee8;border-radius:50%;display:grid;place-items:center;cursor:pointer}.lightbox img{max-height:78vh;max-width:88vw;object-fit:contain;border-radius:14px}.video-modal video{width:min(85vw,850px);max-height:78vh;border-radius:16px;background:#111}.lightbox .close,.video-modal .close{background:#fff;right:-8px;top:-8px}
+      .overlay{position:fixed;z-index:30;inset:0;background:#101725d9;display:grid;place-items:center;padding:22px;backdrop-filter:blur(10px)}.modal{width:min(100%,620px);background:#fffdf7;border-radius:24px;padding:32px;position:relative;box-shadow:0 30px 100px #0005}.modal h2{font:400 42px 'Instrument Serif',Georgia,serif;margin:0 42px 12px 0}.modal p{line-height:1.8;color:#33414e}.close{position:absolute;right:15px;top:15px;width:44px;height:44px;border:0;background:#f0eee8;border-radius:50%;display:grid;place-items:center;cursor:pointer}.lightbox img{max-height:78vh;max-width:88vw;object-fit:contain;border-radius:14px}.video-modal video{width:min(85vw,850px);max-height:78vh;border-radius:16px;background:#111}.lightbox .close,.video-modal .close{background:#fff;right:-8px;top:-8px}.video-sound-toggle{position:absolute;z-index:2;top:-8px;right:48px;min-height:44px;padding:0 13px;display:flex;align-items:center;gap:7px;border:0;border-radius:999px;background:#fff;color:#17253b;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 4px 18px #0003}.video-sound-toggle span{white-space:nowrap}
       /* Keep the film's full-screen cards, and use downward page scrolling to advance them. */
       .film.active-page,.gallery.active-page{padding:0;background:#101725!important;color:#fff}
       .film.active-page .wrap,.gallery.active-page .wrap{width:100%;height:100%;max-width:none;position:relative}
@@ -531,7 +533,7 @@ export default function App() {
       <footer className="footer reveal-chapter" id="ending"><div className="footer-icons"><Heart size={19} fill="#4779bd" color="#315f9c"/><Plane size={19}/><Clapperboard size={19}/></div><h2>Okay, one more rewatch.</h2><p>Happy birthday, Tanu. Love, Kunal.</p><button className="pill" onClick={()=>window.scrollTo({top:0,behavior:'smooth'})}>Back to the beginning <ArrowDown size={14} style={{verticalAlign:'middle',marginLeft:6,transform:'rotate(180deg)'}}/></button></footer>
       {open&&<div className="overlay" onClick={()=>setOpen(null)}><article className="modal" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setOpen(null)} aria-label="Close"><X/></button><div className="eyebrow">A note for Tanu</div><h2>{open.title}</h2><p>{open.body}</p><button className="pill" onClick={()=>setOpen(null)}>Close note</button></article></div>}
       {photo!==null&&<div className="overlay lightbox" onClick={()=>setPhoto(null)}><div style={{position:'relative'}} onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setPhoto(null)} aria-label="Close photo"><X/></button><img src={photos[photo].src} alt={photos[photo].label}/></div></div>}
-      {clip!==null&&<div className="overlay video-modal" onClick={closeClip}><div style={{position:'relative'}} onClick={e=>e.stopPropagation()}><button className="close" onClick={closeClip} aria-label="Close video"><X/></button><video src={clips[clip]} controls autoPlay muted={false} playsInline style={{width:'min(85vw,850px)',maxHeight:'78vh',borderRadius:16,background:'#111'}}/></div></div>}
+      {clip!==null&&<div className="overlay video-modal" onClick={closeClip}><div style={{position:'relative'}} onClick={e=>e.stopPropagation()}><button className="close" onClick={closeClip} aria-label="Close video"><X/></button><button className="video-sound-toggle" onClick={()=>setClipMuted(muted=>!muted)} aria-label={clipMuted?'Turn sound on':'Turn sound off'} aria-pressed={!clipMuted}>{clipMuted?<VolumeX size={18}/>:<Volume2 size={18}/>}<span>{clipMuted?'Sound off':'Sound on'}</span></button><video src={clips[clip]} controls autoPlay muted={clipMuted} playsInline style={{width:'min(85vw,850px)',maxHeight:'78vh',borderRadius:16,background:'#111'}}/></div></div>}
     </div>
   </>;
 }
