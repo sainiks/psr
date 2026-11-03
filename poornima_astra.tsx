@@ -52,7 +52,7 @@ const calendarDuration = (from: number, to: number): CalendarDuration => {
   const seconds = Math.floor(remaining / SECOND);
   return { years, months, days, hours, minutes, seconds };
 };
-function BirthdayLockScreen() {
+function BirthdayLockScreen({ onPreview }: { onPreview: () => void }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), SECOND);
@@ -80,22 +80,24 @@ function BirthdayLockScreen() {
         {units.map(([unit, label]) => <div className="lock-age-unit" key={unit}><strong>{String(elapsed[unit]).padStart(2, '0')}</strong><span>{label}</span></div>)}
       </div>
       <p className="lock-footnote">Unlocks November 7, 2026 · 12:00 AM IST</p>
+      <button className="lock-preview" onClick={onPreview}>Hide lock · preview the site</button>
     </div>
   </div>;
 }
 
 export default function App() {
   const [locked, setLocked] = useState(() => Date.now() < BIRTHDAY_UNLOCK);
+  const [previewUnlocked, setPreviewUnlocked] = useState(false);
   useEffect(() => {
     if (!locked) return;
     const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    if (!previewUnlocked) document.body.style.overflow = 'hidden';
     const unlockTimer = window.setTimeout(() => setLocked(false), Math.max(0, BIRTHDAY_UNLOCK - Date.now()));
     return () => {
       window.clearTimeout(unlockTimer);
       document.body.style.overflow = previousOverflow;
     };
-  }, [locked]);
+  }, [locked, previewUnlocked]);
   const [open, setOpen] = useState<{ title: string; body: string } | null>(null);
   const [roseCount, setRoseCount] = useState(0);
   const [photo, setPhoto] = useState<number | null>(null);
@@ -566,6 +568,10 @@ export default function App() {
       .lock-age-unit strong{font:400 clamp(18px,3vw,26px)/1 'Instrument Serif',Georgia,serif;color:#3159db}
       .lock-age-unit span{font-size:7px}
       .lock-footnote{margin:19px 0 0;padding-top:10px;border-top:1px solid #17253b;color:#17253b;font-size:9px;font-weight:800;letter-spacing:.11em;text-transform:uppercase}
+      .lock-preview{display:block;margin:14px auto 0;padding:7px 10px;border:1px solid #17253b;background:transparent;color:#526176;font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;transition:background .2s,color .2s}
+      .lock-preview:hover{background:#17253b;color:#f6efdc}
+      .lock-return{position:fixed;z-index:9998;right:14px;bottom:14px;padding:9px 12px;border:1px solid #f6efdc;background:#17253b;color:#f6efdc;box-shadow:3px 3px 0 #3159db;font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+      .lock-return:hover{background:#3159db}
       @media(max-width:560px){.birthday-lock{padding:16px}.lock-card{max-height:calc(100svh - 24px);padding:22px 17px;box-shadow:5px 5px 0 #3159db,9px 9px 0 #f1c94b}.lock-topline{font-size:7px}.lock-flower{top:40px;right:18px;font-size:27px}.lock-eyebrow{margin-top:24px}.lock-card h1{font-size:clamp(39px,11vw,56px)}.lock-intro{max-width:260px;margin:12px auto 18px;font-size:11px}.lock-countdown,.lock-age{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.lock-time-unit{padding:9px 3px}.lock-time-unit strong{font-size:27px}.lock-time-unit span{font-size:7px}.lock-divider{margin:19px 0 13px}.lock-age-intro{font-size:14px}.lock-age-unit{padding:7px 2px}.lock-age-unit strong{font-size:22px}.lock-age-unit span{font-size:7px}.lock-footnote{font-size:8px}}
       @media(prefers-reduced-motion:reduce){.lock-flower{animation:none}}
       .jet-photo figcaption strong{color:#f1c94b}
@@ -601,12 +607,14 @@ export default function App() {
       .glimpse-heading h2{color:#17253b;font-weight:400;letter-spacing:-.035em;margin:9px 0}
       .glimpse-heading p{color:#59677a;margin:0;font-size:12px}
       .glimpse-grid{grid-template-columns:1fr;gap:28px}
-      .glimpse-card{padding:0 0 23px;border:0;border-bottom:1px solid #17253b35;border-radius:0;background:transparent}
+      .glimpse-card{padding:0 0 23px;border:0;border-bottom:1px solid #17253b35;border-radius:0;background:transparent;overflow:visible}
       .glimpse-card h3{color:#17253b;margin:7px 0 14px;font-size:clamp(22px,3vw,32px)}
-      .glimpse-reel{animation-duration:9s}
-      .glimpse-reel.reverse{animation-duration:7s}
-      .glimpse-window{mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
-      .glimpse-shot{border-radius:2px;border:1px solid #17253b;box-shadow:3px 3px 0 #3159db;filter:none}
+      .glimpse-reel{animation-duration:30s}
+      .glimpse-reel.reverse{animation-duration:26s}
+      .glimpse-window{overflow:visible;mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
+      .glimpse-card:hover .glimpse-window{mask-image:none}
+      .glimpse-shot{position:relative;border-radius:2px;border:1px solid #17253b;box-shadow:3px 3px 0 #3159db;filter:none;transform:scale(1);transform-origin:center;transition:transform .3s ease,box-shadow .3s ease;cursor:zoom-in}
+      .glimpse-shot:hover{z-index:2;transform:scale(1.22);box-shadow:6px 8px 18px #17253b45}
       .glimpse-videos{grid-column:auto;border-bottom:0;padding-bottom:0}
       .glimpse-video-pair{display:flex;justify-content:center;align-items:flex-start;gap:clamp(12px,4vw,44px);padding:6px 0 12px}
       .glimpse-film-frame{position:relative;flex:0 1 min(32vw,280px);width:min(32vw,280px);aspect-ratio:9/16;background:#dfe6ef;border:1px solid #17253b;box-shadow:5px 5px 0 #3159db;overflow:hidden}
@@ -645,7 +653,7 @@ export default function App() {
       @media(max-width:760px){.bouquet-grid{grid-template-columns:1fr;gap:22px}.bouquet-art{min-height:clamp(300px,88vw,410px);border-radius:21px}.bouquet-art-top,.bouquet-art-bottom{left:15px;right:15px}.bouquet-art-bottom{bottom:16px}.bouquet-copy h2{font-size:clamp(48px,13vw,64px)}.bouquet-copy>p{font-size:12px}.rose-progress{margin:17px 0 13px}.rose-pips{gap:4px}}
       @media(max-width:760px){.dream-scene{padding:77px 20px 24px;grid-template-rows:minmax(190px,35svh) 1fr;gap:16px}.dream-visual{border-radius:0}.dream-copy h2{font-size:clamp(36px,9.5vw,48px);margin-bottom:10px}.scene-kicker{font-size:8px;margin-bottom:10px}.dream-copy p{font-size:11px;line-height:1.55;margin-bottom:7px}.story-cue{margin-top:12px}.story-ending{font-size:14px;margin-top:10px}.fighter-pair{inset:10px 10px 43px;gap:7px}}
     `}</style>
-    <div className="page" aria-hidden={locked} inert={locked}>
+    <div className="page" aria-hidden={locked && !previewUnlocked} inert={locked && !previewUnlocked}>
       <nav className="top"><span className="brand">A NOTE FOR TANU</span><div><a href="#movie">The movie</a><a href="#roses">The roses</a><a href="#memories">Photos</a></div><button onClick={()=>document.getElementById('letter')?.scrollIntoView({behavior:'smooth'})}>Open your note</button></nav>
       <header className="hero" id="home">
         <div className="hero-inner">
@@ -776,6 +784,7 @@ export default function App() {
       {open&&<div className="overlay" onClick={()=>setOpen(null)}><article className="modal" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setOpen(null)} aria-label="Close"><X/></button><div className="eyebrow">A note for Tanu</div><h2>{open.title}</h2><p>{open.body}</p><button className="pill" onClick={()=>setOpen(null)}>Close note</button></article></div>}
       {photo!==null&&<div className="overlay lightbox" onClick={()=>setPhoto(null)}><div style={{position:'relative'}} onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setPhoto(null)} aria-label="Close photo"><X/></button><img src={photos[photo].src} alt={photos[photo].label}/></div></div>}
     </div>
-    {locked && <BirthdayLockScreen/>}
+    {locked && !previewUnlocked && <BirthdayLockScreen onPreview={() => setPreviewUnlocked(true)}/>}
+    {locked && previewUnlocked && <button className="lock-return" onClick={() => setPreviewUnlocked(false)}>Return to countdown</button>}
   </>;
 }
