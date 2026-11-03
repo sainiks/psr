@@ -12,8 +12,8 @@ const photos = [
 ];
 const clips = Array.from({ length: 17 }, (_, i) => `/video/${i + 1}.mp4`);
 const extraPhotoGroups = [
-  { id: 'glimpse-one', eyebrow: '01 — dressed up & dancing around', title: '13 frames. One pink-sari kind of day.', files: Array.from({ length: 13 }, (_, i) => `/EXTRAs/${i + 1}.jpg`) },
-  { id: 'glimpse-two', eyebrow: '02 — the little life files', title: 'Hide-and-seek to flower-day.', files: Array.from({ length: 6 }, (_, i) => `/EXTRAs/${i + 14}.jpg`) },
+  { id: 'glimpse-one', eyebrow: '01 — dressed up & dancing around', title: '13 frames. One pink-sari kind of day.', files: Array.from({ length: 13 }, (_, i) => `/EXTRAs/${i + 1}.avif`) },
+  { id: 'glimpse-two', eyebrow: '02 — the little life files', title: 'Hide-and-seek to flower-day.', files: Array.from({ length: 6 }, (_, i) => `/EXTRAs/${i + 14}.avif`) },
 ];
 const extraClips = ['/EXTRAs/20.mp4', '/EXTRAs/21.mp4'];
 
@@ -672,7 +672,7 @@ export default function App() {
           {extraPhotoGroups.map((group, groupIndex) => <article className="glimpse-card" key={group.id}>
             <small>{group.eyebrow}</small><h3>{group.title}</h3>
             <div className="glimpse-window"><div className={`glimpse-reel${groupIndex ? ' reverse' : ''}`}>
-              {[...group.files, ...group.files].map((src, i) => <img className="glimpse-shot" key={`${src}-${i}`} src={src} alt={`Photo ${src.match(/(\d+)\.jpg$/)?.[1]} from the glimpse`} loading="lazy" decoding="async"/>)}
+              {[...group.files, ...group.files].map((src, i) => <img className="glimpse-shot" key={`${src}-${i}`} src={src} alt={`Photo ${src.match(/(\d+)\.avif$/)?.[1]} from the glimpse`} loading="lazy" decoding="async"/>)}
             </div></div>
           </article>)}
           <article className="glimpse-card glimpse-videos"><small>03 — bestie cam</small><h3>A little stairway silliness.</h3><div className="glimpse-video-pair">
