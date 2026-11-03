@@ -11,17 +11,24 @@ const photos = [
   { src: '/img/855643127_17905789452588295_4710484533333073808_n.webp', label: 'A favourite frame' },
 ];
 const clips = Array.from({ length: 17 }, (_, i) => `/video/${i + 1}.mp4`);
+const extraPhotoGroups = [
+  { id: 'glimpse-one', eyebrow: '01 — dressed up & dancing around', title: '13 frames. One pink-sari kind of day.', files: Array.from({ length: 13 }, (_, i) => `/EXTRAs/${i + 1}.jpg`) },
+  { id: 'glimpse-two', eyebrow: '02 — the little life files', title: 'Hide-and-seek to flower-day.', files: Array.from({ length: 6 }, (_, i) => `/EXTRAs/${i + 14}.jpg`) },
+];
+const extraClips = ['/EXTRAs/20.mp4', '/EXTRAs/21.mp4'];
 
 export default function App() {
   const [open, setOpen] = useState<{ title: string; body: string } | null>(null);
   const [roseCount, setRoseCount] = useState(0);
   const [photo, setPhoto] = useState<number | null>(null);
-  const [clip, setClip] = useState<number | null>(null);
-  const [clipMuted, setClipMuted] = useState(false);
   const [started, setStarted] = useState(false);
   const [songPlaying, setSongPlaying] = useState(false);
   const songPlayingRef = useRef(false);
+  const [songUnlocked, setSongUnlocked] = useState(false);
+  const songUnlockedRef = useRef(false);
   const [mediaFocus, setMediaFocus] = useState<{ kind: 'video' | 'image'; index: number } | null>(null);
+  const [filmAudioEnabled, setFilmAudioEnabled] = useState(true);
+  const filmAudioEnabledRef = useRef(true);
   const [filmAudioNeedsTap, setFilmAudioNeedsTap] = useState(false);
   const filmAudioIndexRef = useRef(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -98,10 +105,10 @@ export default function App() {
           video.pause();
           return;
         }
-        video.muted = false;
+        video.muted = !filmAudioEnabledRef.current;
         video.volume = 0.8;
         if (video.paused) {
-          video.play().then(() => setFilmAudioNeedsTap(false)).catch(() => setFilmAudioNeedsTap(true));
+          video.play().then(() => setFilmAudioNeedsTap(false)).catch(() => { if (filmAudioEnabledRef.current) setFilmAudioNeedsTap(true); });
         }
       });
     };
@@ -128,25 +135,17 @@ export default function App() {
     }
   };
 
-  const enableFilmAudio = () => {
+  const toggleFilmAudio = () => {
+    const nextEnabled = filmAudioNeedsTap ? true : !filmAudioEnabled;
+    filmAudioEnabledRef.current = nextEnabled;
+    setFilmAudioEnabled(nextEnabled);
     const videos = Array.from(document.querySelectorAll<HTMLVideoElement>('.film-card video'));
     const activeVideo = videos[filmAudioIndexRef.current];
-    if (!activeVideo) return;
     videos.forEach(video => { if (video !== activeVideo) { video.muted = true; video.pause(); } });
-    activeVideo.muted = false;
+    if (!activeVideo) return;
+    activeVideo.muted = !nextEnabled;
     activeVideo.volume = 0.8;
-    activeVideo.play().then(() => setFilmAudioNeedsTap(false)).catch(() => setFilmAudioNeedsTap(true));
-  };
-
-  const openClip = (index: number) => {
-    document.querySelectorAll<HTMLVideoElement>('.film-card video').forEach(video => { video.muted = true; video.pause(); });
-    setClipMuted(false);
-    setClip(index);
-  };
-
-  const closeClip = () => {
-    setClip(null);
-    if (document.getElementById('movie')?.classList.contains('active-page')) focusMediaForPage(0);
+    activeVideo.play().then(() => setFilmAudioNeedsTap(false)).catch(() => { if (nextEnabled) setFilmAudioNeedsTap(true); });
   };
 
   useEffect(() => {
@@ -163,6 +162,16 @@ export default function App() {
       const roseChapter = ordered[roseChapterIndex];
       if (roseChapter && nextChapterStart !== undefined && roseChapter.dataset.rosesComplete !== 'true') {
         const gatePosition = nextChapterStart - window.innerHeight * .9 - 1;
+        if (window.scrollY > gatePosition) {
+          window.scrollTo(0, gatePosition);
+          return;
+        }
+      }
+      const dreamsChapterIndex = ordered.findIndex(page => page.id === 'dreams');
+      const birthdayNoteStart = starts[dreamsChapterIndex + 1];
+      const dreamsChapter = ordered[dreamsChapterIndex];
+      if (dreamsChapter && birthdayNoteStart !== undefined && !songUnlockedRef.current) {
+        const gatePosition = birthdayNoteStart - window.innerHeight * .9 - 1;
         if (window.scrollY > gatePosition) {
           window.scrollTo(0, gatePosition);
           return;
@@ -194,10 +203,11 @@ export default function App() {
       const story = document.querySelector<HTMLElement>('.dreams');
       const storyTrack = document.querySelector<HTMLElement>('.dream-story-track');
       if (story && storyTrack) {
-        const travel = Math.max(0, story.offsetHeight - window.innerHeight);
-        const progress = Math.min(1, Math.max(0, -story.getBoundingClientRect().top / Math.max(1, travel)));
-        storyTrack.style.transform = `translateY(${-travel * progress}px)`;
-        const activeScene = Math.min(2, Math.floor(progress * 2 + .001));
+        const sectionTravel = Math.max(0, story.offsetHeight - window.innerHeight);
+        const trackTravel = Math.max(0, storyTrack.scrollHeight - window.innerHeight);
+        const progress = Math.min(1, Math.max(0, -story.getBoundingClientRect().top / Math.max(1, sectionTravel)));
+        storyTrack.style.transform = `translateY(${-trackTravel * progress}px)`;
+        const activeScene = Math.min(2, Math.floor(progress * 3 + .001));
         storyTrack.querySelectorAll('.dream-scene').forEach((scene, index) => scene.classList.toggle('is-current', index === activeScene));
         if ((currentIndex !== 3 || activeScene !== 2) && songPlayingRef.current) {
           songPlayingRef.current = false;
@@ -228,7 +238,15 @@ export default function App() {
     };
   }, []);
   const goToMovie = () => { setStarted(true); document.getElementById('movie')?.scrollIntoView({ behavior: 'smooth' }); };
-  const toggleSong = () => setSongPlaying(current => { songPlayingRef.current = !current; return !current; });
+  const toggleSong = () => setSongPlaying(current => {
+    const next = !current;
+    songPlayingRef.current = next;
+    if (next) {
+      songUnlockedRef.current = true;
+      setSongUnlocked(true);
+    }
+    return next;
+  });
 
   const reveal = (title: string, body: string) => setOpen({ title, body });
   const notes = [
@@ -337,7 +355,7 @@ export default function App() {
       .film.reveal-chapter .section-head{position:absolute;z-index:2;top:72px;left:clamp(20px,5vw,72px);margin:0;padding:16px 20px;max-width:min(600px,88vw);border-radius:16px;background:#f8f5f0ed;box-shadow:0 8px 32px #0002}
       .film.reveal-chapter .section-head p{margin-bottom:0}
       .film.reveal-chapter .film-grid{position:absolute;inset:0;display:flex;gap:0;padding:0;overflow:visible;scroll-snap-type:none;transform:translateX(0);will-change:transform}
-      .film.reveal-chapter .film-card{position:relative;flex:0 0 100vw;width:100vw;height:100%;border:0;border-radius:0;background:#101725;box-shadow:none;scroll-snap-align:none;transform:none}
+      .film.reveal-chapter .film-card{position:relative;flex:0 0 100vw;width:100vw;height:100%;border:0;border-radius:0;background:#101725;box-shadow:none;scroll-snap-align:none;transform:none;cursor:default}
       .film.reveal-chapter .film-card video{position:absolute;inset:0;width:100%;height:100%;max-height:none;object-fit:contain;background:#101725}
       .film.reveal-chapter .film-label{position:absolute;z-index:1;bottom:28px;left:50%;transform:translateX(-50%);color:#fff;background:#101725b8;border-radius:99px;padding:12px 18px;white-space:nowrap;text-shadow:0 1px 8px #000}
       .gallery.reveal-chapter{position:relative;top:auto;height:calc(100svh * var(--photo-count));min-height:calc(100svh * var(--photo-count));max-height:none;display:block;overflow:visible;transform:none!important;perspective:none;backface-visibility:visible;opacity:1;border:0;box-shadow:none;background-image:none}
@@ -356,7 +374,7 @@ export default function App() {
       @media(max-width:760px){.bouquet-grid{gap:14px}.bouquet-art{min-height:155px}.bouquet-copy{font-size:14px;line-height:1.55}.bouquet-copy h2{font-size:38px}.dreams.reveal-chapter{padding:16px}.dreams.reveal-chapter .wrap{width:100%}.story-heading{margin-bottom:8px;text-align:left}.story-heading h2{font-size:clamp(33px,8.5vw,42px);margin:6px 0}.story-heading p{font-size:11px;line-height:1.45;margin:6px 0 0}.story-grid{grid-template-columns:1fr;gap:7px}.story-beat{min-height:0;padding:8px 10px;border-radius:15px;display:grid;grid-template-columns:30px 1fr;column-gap:9px;align-items:center}.story-art{grid-column:1 / -1;height:54px;margin-bottom:2px;border-radius:11px}.story-topline{display:contents!important}.story-icon{grid-row:2 / span 3;width:30px;height:30px;border-radius:10px}.story-icon svg{width:17px;height:17px}.story-index{font-size:8px;align-self:end}.story-beat h3{font-size:19px;margin:1px 0}.story-beat p{font-size:9px;line-height:1.3;max-width:none}.story-more{display:none}.letter-card{max-height:calc(100svh - 36px);overflow:auto;padding:24px}.letter-card h2{font-size:38px;margin-bottom:10px}.letter-card .note-snippet{padding:9px 0}.letter-card .note-snippet p{font-size:17px}.letter-card p.signoff{margin-top:12px;font-size:13px}}
       @media(max-width:760px){.top{justify-content:center;gap:8px;padding:8px 10px}.brand{display:none}.top a{display:inline-block;margin:0 4px;font-size:10px}.top button{padding:8px 10px;font-size:10px;white-space:nowrap}}
       /* Three scroll-led scenes replace the old tappable story cards. */
-      .dreams.reveal-chapter{position:relative;top:auto;height:300svh;min-height:300svh;max-height:none;display:block;overflow:visible;transform:none!important;perspective:none;backface-visibility:visible;opacity:1;border:0;box-shadow:none;background-image:none;padding:0}
+      .dreams.reveal-chapter{position:relative;top:auto;height:400svh;min-height:400svh;max-height:none;display:block;overflow:visible;transform:none!important;perspective:none;backface-visibility:visible;opacity:1;border:0;box-shadow:none;background-image:none;padding:0}
       .dreams.reveal-chapter.waiting-page,.dreams.reveal-chapter.turned-page{opacity:1;pointer-events:auto}
       .dream-story-stage{position:sticky;top:0;height:100svh;overflow:hidden;background:linear-gradient(140deg,#e8eff7,#f5f5f0 55%,#dce8f4)}
       .dream-story-track{position:absolute;inset:0;display:flex;flex-direction:column;height:300svh;will-change:transform}
@@ -381,7 +399,7 @@ export default function App() {
       .reel{position:absolute;top:14%;width:75px;height:75px;border:8px solid #c5d0da;border-radius:50%;box-shadow:inset 0 0 0 7px #536b83,0 0 25px #fff2;animation:reel-turn 10s linear infinite}.reel:before,.reel:after{content:'';position:absolute;width:13px;height:13px;left:50%;top:50%;border:3px solid #d5dce2;border-radius:50%;transform:translate(-50%,-50%)}.reel:after{transform:translate(-50%,-50%) rotate(60deg) translateY(21px)}.reel-one{left:28%}.reel-two{right:28%;animation-direction:reverse}@keyframes reel-turn{to{rotate:360deg}}
       .story-filmstrip{position:absolute;left:-10%;right:-10%;top:52%;display:flex;gap:8px;padding:14px 0;border-top:7px dashed #d9e1e8;border-bottom:7px dashed #d9e1e8;transform:rotate(-8deg);animation:film-glide 12s linear infinite}.story-filmstrip span{height:83px;flex:0 0 22%;border:4px solid #bdc9d5;background:linear-gradient(140deg,#d6b989,#647d93 53%,#293e56);box-shadow:inset 0 0 22px #14263b55}.story-filmstrip span:nth-child(2n){background:linear-gradient(30deg,#34495e,#aebdca 48%,#7f6c59)}@keyframes film-glide{to{translate:-62px 0}}.film-play{position:absolute;left:50%;top:53%;display:grid;place-items:center;width:58px;height:58px;border:1px solid #fff9;border-radius:50%;color:#fff8e8;background:#1b3048b8;box-shadow:0 0 0 12px #fff1,0 0 38px #edc88a55;transform:translate(-50%,-50%);animation:play-pulse 2.4s ease-in-out infinite alternate}@keyframes play-pulse{to{box-shadow:0 0 0 19px #fff0,0 0 50px #edc88a88}}
       .movie-poster{position:relative;z-index:1;height:min(86%,450px);aspect-ratio:294/306;max-width:78%;margin:auto;padding:10px 10px 27px;background:#f4eee3;box-shadow:0 24px 55px #07152699;transform:rotate(-1.5deg)}.movie-poster img{display:block;width:100%;height:100%;object-fit:contain;background:#fff}.movie-poster figcaption{position:absolute;left:0;right:0;bottom:7px;text-align:center;color:#455262;font:italic 14px 'Instrument Serif',Georgia,serif}.movie-song-player{position:absolute;z-index:2;inset:7% 5%;width:90%;height:86%;border:0;border-radius:16px;background:#0b1725;box-shadow:0 24px 55px #07152699}.song-control{display:inline-flex;align-items:center;gap:9px;margin-top:8px;padding:10px 15px;border:1px solid #536c85;border-radius:99px;background:#243c56;color:#fff;cursor:pointer;box-shadow:0 8px 20px #11233824;transition:transform .2s,background .2s}.song-control:hover{transform:translateY(-2px);background:#304f70}.song-control svg{width:14px;height:14px}.film-scene .dream-copy h2,.film-scene .dream-copy p{color:#eef3f7}.film-scene .scene-kicker{color:#cad9e7}.film-scene .scene-kicker span{border-color:#a8bfd455}
-      @media(max-width:760px){.dreams.reveal-chapter{height:300svh;min-height:300svh;padding:0}.dream-story-stage{height:100svh}.dream-scene{padding:76px 20px 26px;grid-template-columns:1fr;grid-template-rows:minmax(190px,35svh) 1fr;gap:18px;align-content:center}.dream-visual{height:100%;min-height:0;max-height:285px;border-radius:22px}.dream-copy{max-width:none;align-self:start}.scene-kicker{font-size:8px;margin-bottom:12px}.scene-kicker span{width:27px;height:27px;flex-basis:27px}.dream-copy h2{font-size:clamp(37px,10vw,48px);margin-bottom:12px}.dream-copy p{font-size:12px;line-height:1.65;margin-bottom:9px}.story-cue{margin-top:16px;font-size:8px}.story-ending{font-size:19px;margin-top:16px}.memory-polaroid{width:min(42vw,175px);height:min(53vw,225px);padding:7px 7px 31px}.memory-polaroid figcaption{font-size:14px;bottom:8px}.fighter-pair{inset:10px 10px 43px;grid-template-columns:1fr 1fr;gap:7px}.jet-photo{border-radius:12px}.jet-photo figcaption{padding:23px 7px 8px}.jet-photo figcaption strong{font-size:8px;letter-spacing:.08em}.jet-photo figcaption span{font-size:7px}.movie-poster{height:88%;max-width:70%;padding:7px 7px 22px}.movie-poster figcaption{font-size:12px;bottom:5px}.movie-song-player{inset:5% 3%;width:94%;height:90%}.song-control{padding:8px 12px;font-size:11px}.reel{width:56px;height:56px;border-width:6px}.story-filmstrip span{height:65px}}
+      @media(max-width:760px){.dreams.reveal-chapter{height:400svh;min-height:400svh;padding:0}.dream-story-stage{height:100svh}.dream-scene{padding:76px 20px 26px;grid-template-columns:1fr;grid-template-rows:minmax(190px,35svh) 1fr;gap:18px;align-content:center}.dream-visual{height:100%;min-height:0;max-height:285px;border-radius:22px}.dream-copy{max-width:none;align-self:start}.scene-kicker{font-size:8px;margin-bottom:12px}.scene-kicker span{width:27px;height:27px;flex-basis:27px}.dream-copy h2{font-size:clamp(37px,10vw,48px);margin-bottom:12px}.dream-copy p{font-size:12px;line-height:1.65;margin-bottom:9px}.story-cue{margin-top:16px;font-size:8px}.story-ending{font-size:19px;margin-top:16px}.memory-polaroid{width:min(42vw,175px);height:min(53vw,225px);padding:7px 7px 31px}.memory-polaroid figcaption{font-size:14px;bottom:8px}.fighter-pair{inset:10px 10px 43px;grid-template-columns:1fr 1fr;gap:7px}.jet-photo{border-radius:12px}.jet-photo figcaption{padding:23px 7px 8px}.jet-photo figcaption strong{font-size:8px;letter-spacing:.08em}.jet-photo figcaption span{font-size:7px}.movie-poster{height:88%;max-width:70%;padding:7px 7px 22px}.movie-poster figcaption{font-size:12px;bottom:5px}.movie-song-player{inset:5% 3%;width:94%;height:90%}.song-control{padding:8px 12px;font-size:11px}.reel{width:56px;height:56px;border-width:6px}.story-filmstrip span{height:65px}}
       @media(max-height:700px) and (min-width:761px){.dream-scene{padding-top:75px;padding-bottom:22px;gap:32px}.dream-visual{height:57vh;min-height:260px}.dream-copy h2{font-size:clamp(38px,4.4vw,56px)}.dream-copy p{font-size:12px;line-height:1.6}.scene-kicker{margin-bottom:14px}}
       @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
       /* One continuous birthday scene: memories, note, voice, and wish together. */
@@ -436,6 +454,95 @@ export default function App() {
       .hero-index>span i{grid-row:span 2;color:#3159db;font-style:normal;font-weight:800}.hero-index>span b{grid-column:2}.hero-index>span small{grid-column:2;color:#6a7484;font-size:9px}.finale-details>span strong{grid-column:2;color:#17253b;font-size:11px}.finale-details>span b{grid-row:span 2}.finale-details>span small{grid-column:2}
       @media(max-width:760px){.hero-index>span{display:flex;gap:8px}.hero-index>span i{width:20px;flex:0 0 20px}.hero-index>span b{width:90px;flex:0 0 90px}.hero-index>span small{margin-left:auto;text-align:right}.finale-details>span{grid-template-columns:30px 1fr auto}.finale-details>span b{grid-row:span 2}.finale-details>span strong{grid-column:2}.finale-details>span small{grid-column:3}}
       @media(prefers-reduced-motion:reduce){.hero-cta,.hero-art-frame{transition:none}}
+      /* The three story scenes carry the finale's bold birthday zine style. */
+      .dreams.reveal-chapter{background:#f6efdc}
+      .dream-story-stage,.dream-story-track{background:#f6efdc}
+      .dream-scene{background:#f6efdc!important;color:#17253b;padding-top:clamp(82px,11vh,112px);padding-bottom:34px}
+      .dream-scene:nth-child(2){background:#e8edf5!important}
+      .dream-scene:nth-child(3){background:#f1c94b!important}
+      .dream-scene:before{display:none}
+      .dream-visual{border:1px solid #17253b;border-radius:0;box-shadow:6px 6px 0 #17253b}
+      .sky-visual,.sky-visual:before{background:#3159db}
+      .fighter-pair{inset:16px 16px 54px;gap:10px}
+      .jet-photo{border:1px solid #17253b;border-radius:0;box-shadow:3px 3px 0 #17253b}
+      .jet-photo img{filter:none}
+      .jet-photo figcaption{background:linear-gradient(transparent,#17253b);padding:35px 11px 11px}
+      .jet-photo figcaption strong{color:#f1c94b}
+      .visual-label{left:14px;bottom:13px;padding:7px 9px;background:#f1c94b;color:#17253b;font-size:8px;letter-spacing:.12em;text-shadow:none}
+      .memory-visual{background:#f05b43}
+      .memory-visual:before,.memory-light{display:none}
+      .memory-polaroid{border:1px solid #17253b;border-radius:0;box-shadow:4px 4px 0 #17253b}
+      .memory-polaroid figcaption{color:#17253b;font:700 11px 'Manrope',sans-serif;text-transform:uppercase;letter-spacing:.04em}
+      .film-visual{background:#17253b;box-shadow:6px 6px 0 #17253b}
+      .movie-poster{border:1px solid #17253b;border-radius:0;box-shadow:5px 5px 0 #f1c94b;transform:rotate(-1deg)}
+      .movie-song-player{border:1px solid #17253b;border-radius:0;box-shadow:5px 5px 0 #f1c94b}
+      .dream-copy{max-width:560px}
+      .scene-kicker{gap:10px;margin-bottom:20px;color:#3159db;font-size:9px;font-weight:800;letter-spacing:.12em}
+      .scene-kicker span{width:38px;height:30px;flex-basis:38px;border:1px solid #17253b;border-radius:0;background:#3159db;color:#fff;font:800 13px 'Manrope',sans-serif}
+      .dream-copy h2{margin:0 0 17px;color:#17253b;font:800 clamp(42px,5.2vw,70px)/.9 'Manrope',sans-serif;letter-spacing:-.085em}
+      .dream-copy p{max-width:500px;margin-bottom:12px;color:#41506a;font:500 13px/1.7 'Manrope',sans-serif}
+      .story-cue{gap:8px;margin-top:24px;color:#3159db;font-size:9px;font-weight:800;letter-spacing:.12em}
+      .story-ending{display:block;margin-top:16px;color:#17253b;font:800 16px/1.4 'Manrope',sans-serif;letter-spacing:-.04em}
+      .film-scene .dream-copy h2,.film-scene .dream-copy p{color:#17253b}
+      .film-scene .scene-kicker{color:#3159db}
+      .film-scene .scene-kicker span{border-color:#17253b}
+      .song-control{border:1px solid #17253b;border-radius:0;background:#3159db;color:#fff;box-shadow:3px 3px 0 #17253b;font:800 10px 'Manrope',sans-serif;text-transform:uppercase;letter-spacing:.06em}
+      .song-control:hover{background:#2448c5;transform:translate(-2px,-2px)}
+      .song-guide{display:flex;align-items:flex-start;gap:9px;max-width:370px;margin:13px 0 0;padding:11px 13px;border-left:3px solid #3159db;background:#3159db0d;color:#344a62;font-size:11px;line-height:1.5}
+      .song-guide svg{flex:0 0 auto;margin-top:1px;color:#3159db}
+      .song-guide.is-unlocked{border-color:#2f805e;background:#2f805e12;color:#245b45}
+      .song-guide.is-unlocked svg{color:#2f805e}
+      .extra-glimpses{min-height:0;padding:clamp(54px,8vw,100px) 24px;background:#101a28;color:#f7f5f0;overflow:hidden}.glimpse-heading{text-align:center;margin:0 auto 34px}.glimpse-heading small,.glimpse-card small{font-size:10px;text-transform:uppercase;letter-spacing:.16em;color:#a8bdd4;font-weight:700}.glimpse-heading h2{font:400 clamp(40px,6vw,68px)/.98 'Instrument Serif',Georgia,serif;margin:12px 0;color:#fff}.glimpse-heading p{font-size:13px;color:#c0cbd6}.glimpse-grid{width:min(100%,1100px);margin:auto;display:grid;grid-template-columns:1fr 1fr;gap:18px}.glimpse-card{min-width:0;position:relative;padding:19px;border:1px solid #ffffff24;border-radius:22px;background:linear-gradient(145deg,#ffffff0d,#ffffff05);overflow:hidden}.glimpse-card h3{font:400 27px 'Instrument Serif',Georgia,serif;margin:6px 0 16px;color:#fff}.glimpse-reel{display:flex;gap:10px;width:max-content;animation:glimpse-drift 13s linear infinite}.glimpse-reel.reverse{animation-direction:reverse;animation-duration:10s}.glimpse-window{overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}.glimpse-shot{width:clamp(115px,14vw,165px);height:clamp(155px,19vw,220px);object-fit:cover;border-radius:12px;display:block;filter:saturate(.9)}@keyframes glimpse-drift{to{transform:translateX(-50%)}}.glimpse-card:hover .glimpse-reel{animation-play-state:paused}.glimpse-videos{grid-column:1/-1}.glimpse-video-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}.glimpse-video-pair video{display:block;width:100%;height:clamp(180px,27vw,300px);object-fit:cover;border-radius:14px;background:#070d15}.glimpse-film-frame{position:relative}.glimpse-film-frame span{position:absolute;left:12px;bottom:12px;color:white;font-size:10px;letter-spacing:.12em;text-transform:uppercase;text-shadow:0 1px 8px #000}@media(max-width:760px){.extra-glimpses{padding:55px 18px}.glimpse-heading{margin-bottom:22px}.glimpse-heading p{font-size:11px}.glimpse-grid{grid-template-columns:1fr;gap:12px}.glimpse-card{padding:15px;border-radius:17px}.glimpse-card h3{font-size:23px;margin-bottom:12px}.glimpse-shot{width:112px;height:148px}.glimpse-videos{grid-column:auto}.glimpse-video-pair video{height:clamp(145px,47vw,230px)}}@media(prefers-reduced-motion:reduce){.glimpse-reel{animation:none!important;overflow-x:auto}}
+      /* Make the extras feel like her own camera roll, with its moments named. */
+      .extra-glimpses{background:#f4f0e8;color:#17253b;padding-top:clamp(58px,8vw,96px);padding-bottom:clamp(64px,9vw,110px)}
+      .glimpse-heading{text-align:left;width:min(100%,1100px);margin-bottom:28px}
+      .glimpse-heading small,.glimpse-card small{color:#3159db}
+      .glimpse-heading h2{color:#17253b;font-weight:400;letter-spacing:-.035em;margin:9px 0}
+      .glimpse-heading p{color:#59677a;margin:0;font-size:12px}
+      .glimpse-grid{grid-template-columns:1fr;gap:28px}
+      .glimpse-card{padding:0 0 23px;border:0;border-bottom:1px solid #17253b35;border-radius:0;background:transparent}
+      .glimpse-card h3{color:#17253b;margin:7px 0 14px;font-size:clamp(22px,3vw,32px)}
+      .glimpse-reel{animation-duration:9s}
+      .glimpse-reel.reverse{animation-duration:7s}
+      .glimpse-window{mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
+      .glimpse-shot{border-radius:2px;border:1px solid #17253b;box-shadow:3px 3px 0 #3159db;filter:none}
+      .glimpse-videos{grid-column:auto;border-bottom:0;padding-bottom:0}
+      .glimpse-video-pair{display:flex;justify-content:center;align-items:flex-start;gap:clamp(12px,4vw,44px);padding:6px 0 12px}
+      .glimpse-film-frame{position:relative;flex:0 1 min(32vw,280px);width:min(32vw,280px);aspect-ratio:9/16;background:#dfe6ef;border:1px solid #17253b;box-shadow:5px 5px 0 #3159db;overflow:hidden}
+      .glimpse-video-pair video{width:100%;height:100%;object-fit:contain;border-radius:0;background:#dfe6ef}
+      .glimpse-film-frame span{left:8px;bottom:8px;padding:5px 7px;color:#17253b;background:#f4f0e8;font-weight:800;text-shadow:none;letter-spacing:.1em}
+      @media(max-width:760px){.extra-glimpses{padding:55px 18px}.glimpse-heading{margin:0 auto 22px}.glimpse-grid{gap:20px}.glimpse-card{padding-bottom:17px}.glimpse-card h3{font-size:22px}.glimpse-shot{width:112px;height:148px}.glimpse-film-frame{flex:0 1 40vw;width:40vw}.glimpse-video-pair{gap:12px}}
+      @media(prefers-reduced-motion:reduce){.glimpse-reel{animation:none!important}.glimpse-window{overflow-x:auto}}
+      /* A small birthday ritual with a visible bloom-by-bloom payoff. */
+      .bouquet{position:relative;overflow:hidden;background:radial-gradient(ellipse at 21% 50%,#d6e6f8 0,transparent 42%),linear-gradient(135deg,#f1f5fa,#e5edf7 62%,#f8f9fb)}
+      .bouquet:before,.bouquet:after{content:'';position:absolute;pointer-events:none;border:1px solid #315f9c18;border-radius:50%}
+      .bouquet:before{width:440px;height:440px;top:-210px;right:-130px;box-shadow:0 0 0 32px #315f9c08,0 0 0 70px #315f9c05}
+      .bouquet:after{width:270px;height:270px;bottom:-185px;left:-100px;box-shadow:0 0 0 25px #315f9c07}
+      .bouquet-grid{position:relative;z-index:1;width:min(100%,1100px);grid-template-columns:1.03fr .97fr;gap:clamp(32px,7vw,88px)}
+      .bouquet-art{min-height:clamp(430px,66vh,640px);border:1px solid #ffffff;border-radius:26px;box-shadow:0 25px 70px #1b3c6229,0 0 0 8px #ffffff6b;isolation:isolate}
+      .bouquet-photo{filter:saturate(1.08) contrast(1.02);object-position:center 50%}
+      .bouquet-art:after{inset:45% 0 0;background:linear-gradient(180deg,transparent 0%,#101e37a6 100%)}
+      .bouquet-art-top,.bouquet-art-bottom{position:absolute;z-index:2;left:20px;right:20px;display:flex;justify-content:space-between;align-items:center;color:#fff;text-shadow:0 2px 14px #14294688}
+      .bouquet-art-top{top:18px;font-size:9px;font-weight:800;letter-spacing:.15em;text-transform:uppercase}
+      .bouquet-art-top span:last-child{padding:8px 10px;border:1px solid #ffffff80;border-radius:99px;background:#14294655;backdrop-filter:blur(8px);font-size:10px;letter-spacing:.08em}
+      .bouquet-art-bottom{bottom:20px;display:block}
+      .bouquet-art-bottom b{display:block;font:400 clamp(28px,4vw,42px)/1 'Instrument Serif',Georgia,serif}
+      .bouquet-art-bottom i{display:block;margin-top:6px;font-size:10px;font-style:normal;letter-spacing:.08em;text-transform:uppercase;color:#e3edf8}
+      .bouquet-copy{max-width:475px;color:#364b62}
+      .bouquet-copy .section-head{margin-bottom:18px}
+      .bouquet-copy .section-head small{display:inline-block;padding:8px 11px;border:1px solid #9bb2cc;border-radius:99px;background:#ffffff87;color:#315f8c;font-size:9px;letter-spacing:.15em}
+      .bouquet-copy h2{font-size:clamp(50px,6.5vw,76px);letter-spacing:-.045em;line-height:.9;margin:17px 0 0}
+      .bouquet-copy>p{font-size:13px;line-height:1.75;max-width:390px;color:#465b70}
+      .rose-progress{margin:21px 0 16px;max-width:355px}
+      .rose-pips{display:grid;grid-template-columns:repeat(19,minmax(0,1fr));gap:5px;margin-bottom:9px}
+      .rose-pip{display:grid;place-items:center;aspect-ratio:1;border:1px solid #afc1d6;border-radius:50%;background:#ffffff8c;color:#afc1d6;font-size:8px;line-height:1;transition:background .25s,color .25s,border-color .25s,transform .25s}
+      .rose-pip.is-added{border-color:#315f9c;background:#315f9c;color:white;transform:scale(1.08);box-shadow:0 2px 8px #315f9c33}
+      .rose-count{margin:0;color:#46627f;font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+      .rose-cta{display:inline-flex;align-items:center;gap:9px;margin-top:4px;padding:13px 18px;border:1px solid #24466f;border-radius:999px;background:#24466f;color:#fff;font-size:12px;font-weight:700;box-shadow:0 8px 20px #24466f35;cursor:pointer;transition:transform .25s,box-shadow .25s,background .25s}
+      .rose-cta:hover{transform:translateY(-3px);background:#18385f;box-shadow:0 13px 26px #24466f40}
+      .rose-cta:disabled{opacity:.92;cursor:default;transform:none}
+      @media(max-width:760px){.bouquet-grid{grid-template-columns:1fr;gap:22px}.bouquet-art{min-height:clamp(300px,88vw,410px);border-radius:21px}.bouquet-art-top,.bouquet-art-bottom{left:15px;right:15px}.bouquet-art-bottom{bottom:16px}.bouquet-copy h2{font-size:clamp(48px,13vw,64px)}.bouquet-copy>p{font-size:12px}.rose-progress{margin:17px 0 13px}.rose-pips{gap:4px}}
+      @media(max-width:760px){.dream-scene{padding:77px 20px 24px;grid-template-rows:minmax(190px,35svh) 1fr;gap:16px}.dream-visual{border-radius:0}.dream-copy h2{font-size:clamp(36px,9.5vw,48px);margin-bottom:10px}.scene-kicker{font-size:8px;margin-bottom:10px}.dream-copy p{font-size:11px;line-height:1.55;margin-bottom:7px}.story-cue{margin-top:12px}.story-ending{font-size:14px;margin-top:10px}.fighter-pair{inset:10px 10px 43px;gap:7px}}
     `}</style>
     <div className="page">
       <nav className="top"><span className="brand">A NOTE FOR TANU</span><div><a href="#movie">The movie</a><a href="#roses">The roses</a><a href="#memories">Photos</a></div><button onClick={()=>document.getElementById('letter')?.scrollIntoView({behavior:'smooth'})}>Open your note</button></nav>
@@ -458,13 +565,47 @@ export default function App() {
           <div className="hero-index"><span><i>01</i><b>THE MOVIE</b><small>Jab We Met, obviously</small></span><span><i>02</i><b>THE ROSES</b><small>Blue. All nineteen.</small></span><span><i>03</i><b>THE DREAM</b><small>Keep climbing, Tanu.</small></span></div>
         </div>
       </header>
-      <section className="film reveal-chapter" id="movie" style={{'--clip-count': clips.length} as React.CSSProperties}><div className="wrap"><div className="section-head"><small>Scene one · the Tanu cut</small><h2>Some moments deserve a replay.</h2><p>Scroll through each memory to hear its music.</p>{filmAudioNeedsTap&&<button className="film-sound-button" onClick={enableFilmAudio}>Tap to start the memory music</button>}</div><div className="film-grid">{clips.map((src,i)=><button className="film-card" key={src} onClick={()=>openClip(i)} aria-label={`Play memory ${i+1} with sound`}><video src={src} muted playsInline loop autoPlay preload="metadata"/><div className="film-label"><span>Memory no. {String(i+1).padStart(2,'0')}</span><span><Play size={15}/></span></div></button>)}</div></div></section>
-      <section className="bouquet reveal-chapter" id="roses" data-roses-complete={roseCount >= 19}><div className="wrap bouquet-grid"><div className="bouquet-art" aria-label={`A real blue rose bouquet, ${roseCount} of 19 roses added`}><img className="bouquet-photo" src="/img/blue-roses-bouquet.jpg" alt="A bouquet of vibrant blue roses"/>{Array.from({length:roseCount},(_,i)=><span className="rose" key={i} style={{left:`${8+(i*29)%80}%`,top:`${8+(i*37)%78}%`,animationDelay:`${i*.04}s`}}><img src="/img/blue-rose-single.jpg" alt="Blue rose bloom"/></span>)}</div><div className="bouquet-copy"><div className="section-head"><small>For your birthday wish</small><h2>Blue roses,<br/>as promised.</h2></div><p>Add 19 blue roses for your 19th birthday to unlock the next chapter.</p><button className="pill" disabled={roseCount >= 19} onClick={()=>setRoseCount(n=>Math.min(19,n+1))}>{roseCount >= 19 ? 'Your bouquet is complete' : 'Add a blue rose'}{roseCount < 19&&<Sparkles size={15} style={{verticalAlign:'middle',marginLeft:6}}/>}</button><div className="rose-count" aria-live="polite">{roseCount}/19 roses added{roseCount >= 19 ? ' · the next chapter is unlocked' : ' · add roses to continue'}</div><p className="bouquet-credit">Rose photos: Creative Commons & Public Domain.</p></div></div></section>
+      <section className="extra-glimpses" id="glimpses" aria-labelledby="glimpse-title">
+        <div className="glimpse-heading"><small>A little something extra · 21 frames from your camera roll</small><h2 id="glimpse-title">Your day, in little flashes.</h2><p>A few favorite frames, running by like the best part of the camera roll.</p></div>
+        <div className="glimpse-grid">
+          {extraPhotoGroups.map((group, groupIndex) => <article className="glimpse-card" key={group.id}>
+            <small>{group.eyebrow}</small><h3>{group.title}</h3>
+            <div className="glimpse-window"><div className={`glimpse-reel${groupIndex ? ' reverse' : ''}`}>
+              {[...group.files, ...group.files].map((src, i) => <img className="glimpse-shot" key={`${src}-${i}`} src={src} alt={`Photo ${src.match(/(\d+)\.jpg$/)?.[1]} from the glimpse`} loading="lazy" decoding="async"/>)}
+            </div></div>
+          </article>)}
+          <article className="glimpse-card glimpse-videos"><small>03 — bestie cam</small><h3>A little stairway silliness.</h3><div className="glimpse-video-pair">
+            {extraClips.map((src, i) => <div className="glimpse-film-frame" key={src}><video src={src} autoPlay muted loop playsInline preload="metadata" aria-label={`Extra video glimpse ${i + 1}`}/><span>clip 0{i + 1}</span></div>)}
+          </div></article>
+        </div>
+      </section>
+      <section className="film reveal-chapter" id="movie" style={{'--clip-count': clips.length} as React.CSSProperties}><div className="wrap"><div className="section-head"><small>Scene one · the Tanu cut</small><h2>Some moments deserve a replay.</h2><p>Scroll through each memory; its music follows.</p><button className="film-sound-button" onClick={toggleFilmAudio} aria-pressed={filmAudioEnabled} aria-label={filmAudioEnabled?'Turn memory music off':'Turn memory music on'}>{filmAudioEnabled?<Volume2 size={16}/>:<VolumeX size={16}/>} {filmAudioNeedsTap?'Tap to start music':filmAudioEnabled?'Sound on':'Sound off'}</button></div><div className="film-grid">{clips.map((src,i)=><div className="film-card" key={src}><video src={src} muted playsInline loop autoPlay preload="metadata" aria-hidden="true"/><div className="film-label"><span>Memory no. {String(i+1).padStart(2,'0')}</span></div></div>)}</div></div></section>
+      <section className="bouquet reveal-chapter" id="roses" data-roses-complete={roseCount >= 19}>
+        <div className="wrap bouquet-grid">
+          <div className="bouquet-art" aria-label={`The blue rose portrait, ${roseCount} of 19 roses added`}>
+            <img className="bouquet-photo" src="/img/blue-roses-bouquet.jpg" alt="A vivid blue rose in full bloom"/>
+            {Array.from({length:roseCount},(_,i)=><span className="rose" key={i} style={{left:`${8+(i*29)%80}%`,top:`${8+(i*37)%78}%`,animationDelay:`${i*.04}s`}}><img src="/img/blue-rose-single.jpg" alt=""/></span>)}
+            <div className="bouquet-art-top"><span>For Tanu · birthday bloom</span><span>{String(roseCount).padStart(2,'0')} / 19</span></div>
+            <div className="bouquet-art-bottom"><b>{roseCount >= 19 ? 'A whole bouquet.' : 'One bloom at a time.'}</b><i>{roseCount >= 19 ? 'Made with love for your nineteenth' : 'A little birthday ritual, just for you'}</i></div>
+          </div>
+          <div className="bouquet-copy">
+            <div className="section-head"><small>A birthday ritual · 19 for 19</small><h2>Make it<br/>nineteen blue.</h2></div>
+            <p>Nineteen blue roses for nineteen years. Add them one by one and watch your birthday bloom come together.</p>
+            <div className="rose-progress" role="progressbar" aria-label="Birthday bouquet progress" aria-valuemin={0} aria-valuemax={19} aria-valuenow={roseCount}>
+              <div className="rose-pips" aria-hidden="true">{Array.from({length:19},(_,i)=><span className={`rose-pip${i<roseCount?' is-added':''}`} key={i}>✿</span>)}</div>
+              <div className="rose-count" aria-live="polite">{roseCount >= 19 ? 'All 19 blooms are yours · next chapter unlocked' : `${roseCount} of 19 blooms added · keep going`}</div>
+            </div>
+            <button className="rose-cta" disabled={roseCount >= 19} onClick={()=>setRoseCount(n=>Math.min(19,n+1))}>
+              {roseCount >= 19 ? 'Your bouquet is complete' : 'Add a blue rose'}{roseCount < 19&&<Sparkles size={15}/>}
+            </button>
+          </div>
+        </div>
+      </section>
       <section className="gallery reveal-chapter" id="memories" style={{'--photo-count': photos.length} as React.CSSProperties}><div className="wrap"><div className="section-head"><small>Scene three · the memory wall</small><h2>For the girl who says,<br/><em>“capture me as a memory.”</em></h2><p>Scroll down through every photo. Each frame takes the whole page.</p><div className="gallery-count"><Camera size={13}/> {photos.length} moments and counting</div></div><div className="gallery-grid">{photos.map((p,i)=><button className="memory" key={p.src} onClick={()=>setPhoto(i)} aria-label={`Open photo: ${p.label}`}><img src={p.src} alt={p.label} loading="lazy" decoding="async"/><span>{p.label}</span></button>)}</div></div></section>
       <section className="dreams reveal-chapter" id="dreams"><div className="dream-story-stage"><div className="dream-story-track">
         <article className="dream-scene sky-scene"><div className="dream-visual sky-visual"><div className="fighter-pair"><figure className="jet-photo jet-f22"><img src="/img/f22-raptor.jpg" alt="Two F-22 Raptor stealth fighters flying in formation" loading="lazy"/><figcaption><strong>F-22 RAPTOR</strong><span>Air superiority</span></figcaption></figure><figure className="jet-photo jet-f35"><img src="/img/f35-lightning.jpg" alt="U.S. Air Force F-35A Lightning II taking off" loading="lazy"/><figcaption><strong>F-35 LIGHTNING II</strong><span>Multirole stealth fighter</span></figcaption></figure></div><span className="visual-label">THE SKY SHE'S WORKING TOWARD</span></div><div className="dream-copy"><div className="scene-kicker"><span>01</span> · THE SKY SHE KEEPS LOOKING TOWARD</div><h2>There is a sky you keep looking toward.</h2><p>I know how much this dream means to you. You don’t need the whole map today; every lesson and every brave next step is still bringing you closer.</p><p>I hope you never make the dream smaller just because the journey takes time. Keep going at your own pace. I’ll be cheering for you.</p><div className="story-cue">SCROLL TO THE NEXT SCENE <ArrowDown size={14}/></div></div></article>
         <article className="dream-scene memory-scene"><div className="dream-visual memory-visual" aria-hidden="true"><span className="memory-light"/><div className="memory-polaroids">{photos.slice(0,3).map((p,i)=><figure className={`memory-polaroid memory-${i+1}`} key={p.src}><img src={p.src} alt="" loading="lazy"/><figcaption>{i===0?'a day to keep':i===1?'just as you are':'little things, kept close'}</figcaption></figure>)}</div><span className="visual-label">DAYS THAT BECOME STORIES</span></div><div className="dream-copy"><div className="scene-kicker"><span>02</span> · THE MOMENTS YOU CHOOSE TO KEEP</div><h2>You said, “capture me as a memory.”</h2><p>I hope you never stop asking.</p><p>One day, these little photos will bring back more than how a day looked. They’ll remind you how much you laughed, how closely you noticed everything, and how fully you were there.</p><div className="story-cue">SCROLL TO THE NEXT SCENE <ArrowDown size={14}/></div></div></article>
-        <article className="dream-scene film-scene"><div className="dream-visual film-visual">{songPlaying?<iframe className="movie-song-player" src="https://www.youtube-nocookie.com/embed/mt9xg0mmt28?autoplay=1&controls=1&playsinline=1&rel=0" title="Tum Se Hi from Jab We Met, official T-Series video" allow="autoplay; encrypted-media; picture-in-picture" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen/>:<figure className="movie-poster"><img src="/img/jab-we-met-poster.jpg" alt="Jab We Met movie poster featuring Geet and Aditya"/><figcaption>Jab We Met · 2007</figcaption></figure>}<span className="visual-label">GEET & ADITYA · ONE MORE REWATCH</span></div><div className="dream-copy"><div className="scene-kicker"><span>03</span> · THE JOY YOU RETURN TO</div><h2>And then there are the stories that feel like home.</h2><p>Geet, a familiar scene, and you saying the line before she does.</p><p>Some days are for chasing the big dream. Some are for pressing play and letting yourself smile. I hope you always keep space for both. Joy belongs in the life you’re building.</p><button className="song-control" onClick={toggleSong}><Play size={15} fill="currentColor"/>{songPlaying?'Back to Geet & Aditya':'Play “Tum Se Hi”'}</button><div className="story-ending">Keep making room for all of it. The next chapter is yours.</div></div></article>
+        <article className="dream-scene film-scene"><div className="dream-visual film-visual">{songPlaying?<iframe className="movie-song-player" src="https://www.youtube-nocookie.com/embed/mt9xg0mmt28?autoplay=1&controls=1&playsinline=1&rel=0" title="Tum Se Hi from Jab We Met, official T-Series video" allow="autoplay; encrypted-media; picture-in-picture" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen/>:<figure className="movie-poster"><img src="/img/jab-we-met-poster.jpg" alt="Jab We Met movie poster featuring Geet and Aditya"/><figcaption>Jab We Met · 2007</figcaption></figure>}<span className="visual-label">GEET & ADITYA · ONE MORE REWATCH</span></div><div className="dream-copy"><div className="scene-kicker"><span>03</span> · THE JOY YOU RETURN TO</div><h2>And then there are the stories that feel like home.</h2><p>Geet, a familiar scene, and you saying the line before she does.</p><p>Before your birthday note opens, give Geet a moment. Press play on “Tum Se Hi”; that unlocks what’s next.</p><button className="song-control" onClick={toggleSong}><Play size={15} fill="currentColor"/>{songPlaying?'Back to Geet & Aditya':'Play “Tum Se Hi” to continue'}</button><div className={`song-guide${songUnlocked?' is-unlocked':''}`} role="status">{songUnlocked?<><ArrowDown size={15}/>Song started. Scroll down for your birthday note.</>:<><Play size={15} fill="currentColor"/>Press play here to unlock the next chapter.</>}</div></div></article>
       </div></div></section>
 
       <section className="letter birthday-finale reveal-chapter" id="letter">
@@ -533,7 +674,6 @@ export default function App() {
       <footer className="footer reveal-chapter" id="ending"><div className="footer-icons"><Heart size={19} fill="#4779bd" color="#315f9c"/><Plane size={19}/><Clapperboard size={19}/></div><h2>Okay, one more rewatch.</h2><p>Happy birthday, Tanu. Love, Kunal.</p><button className="pill" onClick={()=>window.scrollTo({top:0,behavior:'smooth'})}>Back to the beginning <ArrowDown size={14} style={{verticalAlign:'middle',marginLeft:6,transform:'rotate(180deg)'}}/></button></footer>
       {open&&<div className="overlay" onClick={()=>setOpen(null)}><article className="modal" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setOpen(null)} aria-label="Close"><X/></button><div className="eyebrow">A note for Tanu</div><h2>{open.title}</h2><p>{open.body}</p><button className="pill" onClick={()=>setOpen(null)}>Close note</button></article></div>}
       {photo!==null&&<div className="overlay lightbox" onClick={()=>setPhoto(null)}><div style={{position:'relative'}} onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setPhoto(null)} aria-label="Close photo"><X/></button><img src={photos[photo].src} alt={photos[photo].label}/></div></div>}
-      {clip!==null&&<div className="overlay video-modal" onClick={closeClip}><div style={{position:'relative'}} onClick={e=>e.stopPropagation()}><button className="close" onClick={closeClip} aria-label="Close video"><X/></button><button className="video-sound-toggle" onClick={()=>setClipMuted(muted=>!muted)} aria-label={clipMuted?'Turn sound on':'Turn sound off'} aria-pressed={!clipMuted}>{clipMuted?<VolumeX size={18}/>:<Volume2 size={18}/>}<span>{clipMuted?'Sound off':'Sound on'}</span></button><video src={clips[clip]} controls autoPlay muted={clipMuted} playsInline style={{width:'min(85vw,850px)',maxHeight:'78vh',borderRadius:16,background:'#111'}}/></div></div>}
     </div>
   </>;
 }
