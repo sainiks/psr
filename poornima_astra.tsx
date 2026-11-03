@@ -17,7 +17,85 @@ const extraPhotoGroups = [
 ];
 const extraClips = ['/EXTRAs/20.mp4', '/EXTRAs/21.mp4'];
 
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+const BIRTHDAY_START = Date.parse('2007-11-07T00:00:00+05:30');
+const BIRTHDAY_UNLOCK = Date.parse('2026-11-07T00:00:00+05:30');
+const SECOND = 1000;
+const MINUTE = 60 * SECOND;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+
+type CalendarDuration = { years: number; months: number; days: number; hours: number; minutes: number; seconds: number };
+
+// Shift instants into an IST-shaped UTC date so calendar units stay consistent worldwide.
+const istDate = (instant: number) => new Date(instant + IST_OFFSET_MS);
+const addCalendarMonths = (date: Date, months: number) => {
+  const monthIndex = date.getUTCFullYear() * 12 + date.getUTCMonth() + months;
+  const year = Math.floor(monthIndex / 12);
+  const month = monthIndex - year * 12;
+  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(year, month, Math.min(date.getUTCDate(), lastDay), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds()));
+};
+const calendarDuration = (from: number, to: number): CalendarDuration => {
+  const start = istDate(from);
+  const end = istDate(Math.max(from, to));
+  let years = end.getUTCFullYear() - start.getUTCFullYear();
+  let cursor = addCalendarMonths(start, years * 12);
+  if (cursor > end) { years--; cursor = addCalendarMonths(start, years * 12); }
+  let months = (end.getUTCFullYear() - cursor.getUTCFullYear()) * 12 + end.getUTCMonth() - cursor.getUTCMonth();
+  let next = addCalendarMonths(cursor, months);
+  if (next > end) { months--; next = addCalendarMonths(cursor, months); }
+  let remaining = end.getTime() - next.getTime();
+  const days = Math.floor(remaining / DAY); remaining -= days * DAY;
+  const hours = Math.floor(remaining / HOUR); remaining -= hours * HOUR;
+  const minutes = Math.floor(remaining / MINUTE); remaining -= minutes * MINUTE;
+  const seconds = Math.floor(remaining / SECOND);
+  return { years, months, days, hours, minutes, seconds };
+};
+function BirthdayLockScreen() {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), SECOND);
+    return () => window.clearInterval(timer);
+  }, []);
+  const elapsed = calendarDuration(BIRTHDAY_START, Math.min(now, BIRTHDAY_UNLOCK));
+  const remaining = calendarDuration(now, BIRTHDAY_UNLOCK);
+  const units: Array<[keyof CalendarDuration, string]> = [
+    ['years', 'years'], ['months', 'months'], ['days', 'days'], ['hours', 'hours'], ['minutes', 'minutes'], ['seconds', 'seconds'],
+  ];
+  return <div className="birthday-lock" role="dialog" aria-modal="true" aria-labelledby="lock-title">
+    <div className="lock-card">
+      <div className="lock-topline"><span>TANU DAY · THE COUNTDOWN ISSUE</span><span>07 NOVEMBER</span></div>
+      <div className="lock-flower" aria-hidden="true">✿</div>
+      <p className="lock-eyebrow">A little more time</p>
+      <h1 id="lock-title">Something lovely<br/><em>is almost here.</em></h1>
+      <p className="lock-intro">This birthday world opens at midnight, on November 7.</p>
+      <div className="lock-countdown" aria-label="Time until the website unlocks">
+        {units.map(([unit, label]) => <div className="lock-time-unit" key={unit}><strong>{String(remaining[unit]).padStart(2, '0')}</strong><span>{label}</span></div>)}
+      </div>
+      <div className="lock-divider"><span>✦</span></div>
+      <p className="lock-age-label">Since November 7, 2007</p>
+      <p className="lock-age-intro">Every year, month, day, hour, minute, and second matters.</p>
+      <div className="lock-age" aria-label="Elapsed time since November 7, 2007">
+        {units.map(([unit, label]) => <div className="lock-age-unit" key={unit}><strong>{String(elapsed[unit]).padStart(2, '0')}</strong><span>{label}</span></div>)}
+      </div>
+      <p className="lock-footnote">Unlocks November 7, 2026 · 12:00 AM IST</p>
+    </div>
+  </div>;
+}
+
 export default function App() {
+  const [locked, setLocked] = useState(() => Date.now() < BIRTHDAY_UNLOCK);
+  useEffect(() => {
+    if (!locked) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const unlockTimer = window.setTimeout(() => setLocked(false), Math.max(0, BIRTHDAY_UNLOCK - Date.now()));
+    return () => {
+      window.clearTimeout(unlockTimer);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [locked]);
   const [open, setOpen] = useState<{ title: string; body: string } | null>(null);
   const [roseCount, setRoseCount] = useState(0);
   const [photo, setPhoto] = useState<number | null>(null);
@@ -467,6 +545,29 @@ export default function App() {
       .jet-photo{border:1px solid #17253b;border-radius:0;box-shadow:3px 3px 0 #17253b}
       .jet-photo img{filter:none}
       .jet-photo figcaption{background:linear-gradient(transparent,#17253b);padding:35px 11px 11px}
+      .birthday-lock{position:fixed;z-index:9999;inset:0;display:grid;place-items:center;overflow:auto;padding:24px;background:radial-gradient(circle at 12% 15%,#3159db 0 1px,transparent 2px),radial-gradient(circle at 88% 78%,#f1c94b 0 1px,transparent 2px),#17253b;background-size:31px 31px,43px 43px,auto;color:#17253b}
+      .lock-card{position:relative;width:min(100%,720px);max-height:calc(100svh - 36px);overflow:auto;padding:clamp(24px,5vw,52px);border:1px solid #17253b;background:#f6efdc;box-shadow:9px 9px 0 #3159db,14px 14px 0 #f1c94b;text-align:center}
+      .lock-topline{display:flex;justify-content:space-between;gap:12px;padding:0 0 10px;border-bottom:2px solid #17253b;font-size:9px;font-weight:800;letter-spacing:.12em;text-align:left}
+      .lock-flower{position:absolute;top:48px;right:clamp(22px,5vw,52px);color:#3159db;font-size:34px;animation:lock-turn 18s linear infinite}
+      @keyframes lock-turn{to{transform:rotate(360deg)}}
+      .lock-eyebrow{margin:27px 0 0;color:#3159db;font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+      .lock-card h1{margin:12px 0;color:#17253b;font:800 clamp(39px,7vw,68px)/.88 'Manrope',sans-serif;letter-spacing:-.08em}
+      .lock-card h1 em{color:#3159db;font-style:normal}
+      .lock-intro{margin:13px 0 24px;color:#59677a;font-size:12px;line-height:1.6}
+      .lock-countdown,.lock-age{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+      .lock-time-unit{display:grid;gap:5px;padding:12px 5px 10px;border:1px solid #17253b;background:#fffaf0;box-shadow:2px 2px 0 #17253b}
+      .lock-time-unit strong{font-size:clamp(22px,4vw,35px);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.06em}
+      .lock-time-unit span,.lock-age-unit span{color:#526176;font-size:8px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+      .lock-divider{display:flex;align-items:center;gap:12px;margin:25px 0 16px;color:#3159db}
+      .lock-divider:before,.lock-divider:after{height:1px;flex:1;background:#17253b44;content:''}
+      .lock-age-label{margin:0;color:#17253b;font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+      .lock-age-intro{margin:6px 0 13px;color:#697586;font:italic 16px 'Instrument Serif',Georgia,serif}
+      .lock-age-unit{display:grid;gap:3px;padding:9px 3px;border-top:1px solid #17253b35;font-variant-numeric:tabular-nums}
+      .lock-age-unit strong{font:400 clamp(18px,3vw,26px)/1 'Instrument Serif',Georgia,serif;color:#3159db}
+      .lock-age-unit span{font-size:7px}
+      .lock-footnote{margin:19px 0 0;padding-top:10px;border-top:1px solid #17253b;color:#17253b;font-size:9px;font-weight:800;letter-spacing:.11em;text-transform:uppercase}
+      @media(max-width:560px){.birthday-lock{padding:16px}.lock-card{max-height:calc(100svh - 24px);padding:22px 17px;box-shadow:5px 5px 0 #3159db,9px 9px 0 #f1c94b}.lock-topline{font-size:7px}.lock-flower{top:40px;right:18px;font-size:27px}.lock-eyebrow{margin-top:24px}.lock-card h1{font-size:clamp(39px,11vw,56px)}.lock-intro{max-width:260px;margin:12px auto 18px;font-size:11px}.lock-countdown,.lock-age{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.lock-time-unit{padding:9px 3px}.lock-time-unit strong{font-size:27px}.lock-time-unit span{font-size:7px}.lock-divider{margin:19px 0 13px}.lock-age-intro{font-size:14px}.lock-age-unit{padding:7px 2px}.lock-age-unit strong{font-size:22px}.lock-age-unit span{font-size:7px}.lock-footnote{font-size:8px}}
+      @media(prefers-reduced-motion:reduce){.lock-flower{animation:none}}
       .jet-photo figcaption strong{color:#f1c94b}
       .visual-label{left:14px;bottom:13px;padding:7px 9px;background:#f1c94b;color:#17253b;font-size:8px;letter-spacing:.12em;text-shadow:none}
       .memory-visual{background:#f05b43}
@@ -544,7 +645,7 @@ export default function App() {
       @media(max-width:760px){.bouquet-grid{grid-template-columns:1fr;gap:22px}.bouquet-art{min-height:clamp(300px,88vw,410px);border-radius:21px}.bouquet-art-top,.bouquet-art-bottom{left:15px;right:15px}.bouquet-art-bottom{bottom:16px}.bouquet-copy h2{font-size:clamp(48px,13vw,64px)}.bouquet-copy>p{font-size:12px}.rose-progress{margin:17px 0 13px}.rose-pips{gap:4px}}
       @media(max-width:760px){.dream-scene{padding:77px 20px 24px;grid-template-rows:minmax(190px,35svh) 1fr;gap:16px}.dream-visual{border-radius:0}.dream-copy h2{font-size:clamp(36px,9.5vw,48px);margin-bottom:10px}.scene-kicker{font-size:8px;margin-bottom:10px}.dream-copy p{font-size:11px;line-height:1.55;margin-bottom:7px}.story-cue{margin-top:12px}.story-ending{font-size:14px;margin-top:10px}.fighter-pair{inset:10px 10px 43px;gap:7px}}
     `}</style>
-    <div className="page">
+    <div className="page" aria-hidden={locked} inert={locked}>
       <nav className="top"><span className="brand">A NOTE FOR TANU</span><div><a href="#movie">The movie</a><a href="#roses">The roses</a><a href="#memories">Photos</a></div><button onClick={()=>document.getElementById('letter')?.scrollIntoView({behavior:'smooth'})}>Open your note</button></nav>
       <header className="hero" id="home">
         <div className="hero-inner">
@@ -675,5 +776,6 @@ export default function App() {
       {open&&<div className="overlay" onClick={()=>setOpen(null)}><article className="modal" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setOpen(null)} aria-label="Close"><X/></button><div className="eyebrow">A note for Tanu</div><h2>{open.title}</h2><p>{open.body}</p><button className="pill" onClick={()=>setOpen(null)}>Close note</button></article></div>}
       {photo!==null&&<div className="overlay lightbox" onClick={()=>setPhoto(null)}><div style={{position:'relative'}} onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setPhoto(null)} aria-label="Close photo"><X/></button><img src={photos[photo].src} alt={photos[photo].label}/></div></div>}
     </div>
+    {locked && <BirthdayLockScreen/>}
   </>;
 }
