@@ -330,10 +330,10 @@ export default function App() {
 
   const reveal = (title: string, body: string) => setOpen({ title, body });
   const notes = [
-    'I hope today has Jab We Met, something delicious, and exactly as much doing-nothing as you want.',
-    'I love how you notice the small details. Your eye for design is already yours—keep making things the way you see them.',
-    'And keep going after that pilot’s seat. One class, one exam, one brave step at a time. I’ll be in your corner.',
-    'Nineteen blue roses for nineteen. Here’s to a year that feels like yours.',
+    'Heyy, hi Tanu. This isn’t just a note; it’s a wish filled with feelings I can’t fully express.',
+    'I know your family and friends will be wishing you a happy birthday today. I just want to pray that God blesses you with lots of happiness, peace, faith, strength, and love in your life.',
+    'I hope you always stay happy and keep smiling the way you do.',
+    'Wishing you the happiest birthday, Poornima Singh Rana (Tanu).',
   ];
 
   return <>
