@@ -498,6 +498,7 @@ export default function App() {
       .finale-letter{position:relative;padding:clamp(23px,3vw,38px) clamp(22px,3.5vw,46px);background:linear-gradient(150deg,#fffdf8,#f2eee5);color:#2d3d50;box-shadow:0 22px 70px #02071580;border-radius:2px 20px 2px 20px}.finale-letter:before{content:'';position:absolute;inset:10px;border:1px solid #74869a24;border-radius:1px 13px 1px 13px;pointer-events:none}
       .finale-letter .letter-top{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 12px}.finale-letter .finale-kicker{color:#647b99;font-size:9px;letter-spacing:.17em}.stamp{padding:6px 8px;border:1px solid #aab7c5;color:#6e7d8f;border-radius:2px;font-size:8px;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}.finale-letter h3{position:relative;z-index:1;font:400 clamp(30px,4vw,42px)/1 'Instrument Serif',Georgia,serif;color:#263950;margin:0 0 9px}.finale-message{position:relative;z-index:1}.finale-message p{font:clamp(14px,1.45vw,17px)/1.5 'Instrument Serif',Georgia,serif;color:#435366;margin:0;padding:7px 0;border-bottom:1px solid #52698720}.finale-message p:last-child{border-bottom:0}.finale-signoff{position:relative;z-index:1;margin-top:12px;padding-top:11px;border-top:1px solid #52698730;color:#657285;font:italic 15px/1.3 'Instrument Serif',Georgia,serif}.finale-signoff strong{display:inline-flex;align-items:center;gap:5px;margin-top:4px;color:#3b5d84;font:italic 18px 'Instrument Serif',Georgia,serif}.finale-signoff svg{color:#55799e}
       .finale-actions{display:grid;grid-template-columns:1fr 1fr;gap:clamp(18px,4vw,52px);padding:19px 0 8px;border-top:1px solid #d4d9ea2a;border-bottom:1px solid #d4d9ea2a}.finale-voice{min-width:0}.action-kicker{display:flex;align-items:center;gap:9px;color:#d9ddea;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-bottom:11px}.voice-dot{width:7px;height:7px;border-radius:50%;background:#a8bfd8;box-shadow:0 0 0 4px #a8bfd826}.voice-dot.is-playing{background:#e5c98f;box-shadow:0 0 0 4px #e5c98f30}
+      .birthday-wish-last.reveal-chapter{z-index:7;display:grid;place-items:center;min-height:100svh;padding:clamp(54px,8vh,90px) clamp(20px,5vw,76px);background:#f6efdc;color:#17253b}.birthday-wish-wrap{width:min(100%,1000px);margin:auto}.birthday-wish-heading{margin:0 auto 22px;max-width:1000px}.birthday-wish-heading .finale-kicker{color:#3159db;font-size:10px;font-weight:800;letter-spacing:.15em;text-transform:uppercase}.birthday-wish-heading h2{margin:10px 0;font:800 clamp(45px,7vw,76px)/.94 'Manrope',sans-serif;letter-spacing:-.07em;color:#17253b}.birthday-wish-heading h2 em{color:#3159db;font-style:normal}.birthday-wish-heading p{margin:0;color:#41506a;font-size:14px;line-height:1.6}.birthday-wish-letter{padding:clamp(14px,2vw,24px)}.birthday-wish-letter .letter-top{margin-bottom:12px}.birthday-wish-last .finale-pdf-preview-button{height:min(74svh,900px);min-height:500px}.birthday-wish-last .finale-pdf-preview{pointer-events:none}.birthday-wish-last .finale-pdf-expand{inset:0;display:flex;align-items:flex-end;justify-content:center;width:100%;height:100%;padding:18px;border:0;background:linear-gradient(transparent 76%,#17253bc9);color:#fff;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;cursor:zoom-in}.birthday-wish-last .finale-pdf-expand:hover{background:linear-gradient(transparent 70%,#17253be8)}.wish-fullscreen iframe{width:96vw;height:96svh}@media(max-width:760px){.birthday-wish-last.reveal-chapter{padding:78px 16px 30px}.birthday-wish-letter{padding:12px}.birthday-wish-last .finale-pdf-preview-button{height:70svh;min-height:420px}.wish-fullscreen{padding:1svh 1vw}.wish-fullscreen iframe{width:98vw;height:98svh}}
       .letter.birthday-finale .player-wrap{display:flex;align-items:center;gap:12px;width:100%;padding:0;background:transparent;border:0}.letter.birthday-finale .play-btn{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border:1px solid #d0d9e866;border-radius:50%;background:#f7f4ef;color:#243b57;cursor:pointer;transition:transform .2s,background .2s}.letter.birthday-finale .play-btn:hover{transform:scale(1.06);background:#e4d9ed}.letter.birthday-finale .bars{height:38px;flex:1;display:flex;align-items:center;gap:3px;padding:0 2px;cursor:pointer}.letter.birthday-finale .bar{width:3px;min-height:5px;border-radius:4px;background:#a7b3c7;opacity:.7;transition:background .2s}.letter.birthday-finale .bar-filled{background:#e5c98f;opacity:1}.letter.birthday-finale .bars.is-playing .bar{animation:soundBar .75s ease-in-out infinite alternate;transform-origin:center}.letter.birthday-finale .time-tag{color:#d1d8e4;font-size:10px;font-variant-numeric:tabular-nums;white-space:nowrap}
       .finale-wish{display:grid;grid-template-columns:48px 1fr auto;align-items:center;gap:12px}.candle-illustration{width:42px;height:55px;position:relative;display:grid;justify-items:center;align-content:start;color:#f4ce8e}.candle-illustration svg{position:relative;z-index:1;filter:drop-shadow(0 0 12px #f3c9779c);animation:candle-flicker 1.3s ease-in-out infinite alternate}.candle-illustration i{position:absolute;bottom:0;width:15px;height:31px;border-radius:3px 3px 2px 2px;background:linear-gradient(90deg,#7497ba,#d6e2ed 55%,#7f9fbd);box-shadow:0 0 18px #90b3d43a}.candle-glow{position:absolute;top:1px;width:33px;height:33px;border-radius:50%;background:#f1cb8f38;filter:blur(7px)}@keyframes candle-flicker{to{transform:rotate(4deg) scale(.94)}}.wish-made .candle-illustration svg{opacity:.35;filter:none;animation:none}.wish-copy .action-kicker{margin:0 0 5px;color:#d5c6e6}.wish-copy p{margin:0;color:#cbd4e1;font:italic 15px/1.35 'Instrument Serif',Georgia,serif}.letter.birthday-finale .wish-btn{min-height:40px;padding:10px 14px;border:1px solid #e5c98f;border-radius:2px 12px 2px 12px;background:#e5c98f;color:#273951;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;cursor:pointer;transition:transform .2s,background .2s}.letter.birthday-finale .wish-btn:hover{transform:translateY(-2px);background:#f2dcae}
       .finale-footer{display:flex;justify-content:center;align-items:center;gap:10px;padding-top:3px;color:#b7c4d7;font-size:9px;letter-spacing:.15em;text-transform:uppercase}.finale-footer svg,.finale-footer span{color:#e2c68d}
@@ -728,21 +729,6 @@ export default function App() {
             <p>Geet on repeat. Blue roses in full bloom. And one more year closer to the sky you’re working toward.</p>
           </header>
 
-          <div className="finale-scene">
-            <div className="finale-portrait" aria-label="A few favorite memories">
-              {photos.slice(0, 3).map((p, i) => <figure className={`finale-photo finale-photo-${i + 1}`} key={p.src}><img src={p.src} alt={p.label}/></figure>)}
-              <span className="portrait-caption">camera roll favourites · 2026</span>
-            </div>
-
-            <article className="finale-letter">
-              <div className="letter-top">
-                <div className="finale-kicker">A wish from Kunal</div>
-                <span className="stamp">19 · Nov 7</span>
-              </div>
-              <div className="finale-pdf-preview-button"><iframe className="finale-pdf-preview" src="/tanu-birthday-wish.pdf#toolbar=1&navpanes=0&view=FitH" title="Original handwritten birthday wish PDF, both pages"/><button className="finale-pdf-expand" onClick={() => setWishFullscreen(true)}>View full-screen</button></div>
-              <a className="finale-pdf-open" href="/tanu-birthday-wish.pdf" target="_blank" rel="noreferrer">Open the full wish</a>
-            </article>
-          </div>
 
           <div className="finale-details" aria-label="Birthday essentials"><span><b>01</b><strong>Jab We Met</strong><small>one more rewatch</small></span><span><b>02</b><strong>Blue roses</strong><small>nineteen of them</small></span><span><b>03</b><strong>Big skies</strong><small>keep going, Tanu</small></span></div>
 
@@ -781,7 +767,26 @@ export default function App() {
         {petals.map(p => <span key={p.id} className="floating-petal" style={{left:`${p.left}%`,animationDelay:`${p.delay}s`}}>{p.char}</span>)}
       </section>
 
-      <footer className="footer reveal-chapter" id="ending"><div className="footer-icons"><Heart size={19} fill="#4779bd" color="#315f9c"/><Plane size={19}/><Clapperboard size={19}/></div><h2>Okay, one more rewatch.</h2><p>Happy birthday, Tanu. Love, Kunal.</p><button className="pill" onClick={()=>window.scrollTo({top:0,behavior:'smooth'})}>Back to the beginning <ArrowDown size={14} style={{verticalAlign:'middle',marginLeft:6,transform:'rotate(180deg)'}}/></button></footer>
+      <section className="birthday-wish-last reveal-chapter" id="birthday-wish">
+        <div className="birthday-wish-wrap">
+          <header className="birthday-wish-heading">
+            <div className="finale-kicker">A wish from Kunal</div>
+            <h2>For you,<br/><em>with all my love.</em></h2>
+            <p>Every word, just as I wrote it. Tap anywhere on the letter to read it full-screen.</p>
+          </header>
+          <article className="finale-letter birthday-wish-letter">
+            <div className="letter-top">
+              <div className="finale-kicker">Your handwritten birthday wish</div>
+              <span className="stamp">19 · Nov 7</span>
+            </div>
+            <div className="finale-pdf-preview-button">
+              <iframe className="finale-pdf-preview" src="/tanu-birthday-wish.pdf#toolbar=1&navpanes=0&view=FitH" title="Original handwritten birthday wish PDF, both pages"/>
+              <button className="finale-pdf-expand" onClick={() => setWishFullscreen(true)} aria-label="Read the handwritten birthday wish full-screen">Tap to read full-screen</button>
+            </div>
+            <a className="finale-pdf-open" href="/tanu-birthday-wish.pdf" target="_blank" rel="noreferrer">Open the PDF in a new tab</a>
+          </article>
+        </div>
+      </section>
       {open&&<div className="overlay" onClick={()=>setOpen(null)}><article className="modal" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setOpen(null)} aria-label="Close"><X/></button><div className="eyebrow">A note for Tanu</div><h2>{open.title}</h2><p>{open.body}</p><button className="pill" onClick={()=>setOpen(null)}>Close note</button></article></div>}
       {wishFullscreen&&<div className="wish-fullscreen" role="dialog" aria-modal="true" aria-label="Original handwritten birthday wish PDF, both pages"><button className="wish-fullscreen-close" onClick={() => setWishFullscreen(false)} aria-label="Close full-screen wish"><X size={22}/></button><iframe src="/tanu-birthday-wish.pdf#toolbar=1&navpanes=0&view=FitH" title="Original handwritten birthday wish PDF, both pages"/></div>}
       {photo!==null&&<div className="overlay lightbox" onClick={()=>setPhoto(null)}><div style={{position:'relative'}} onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setPhoto(null)} aria-label="Close photo"><X/></button><img src={photos[photo].src} alt={photos[photo].label}/></div></div>}
