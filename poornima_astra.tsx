@@ -10,7 +10,7 @@ const photos = [
   { src: '/img/857189100_17905787178588295_1323502340611779721_n.webp', label: 'One to remember' },
   { src: '/img/855643127_17905789452588295_4710484533333073808_n.webp', label: 'A favourite frame' },
 ];
-const clips = Array.from({ length: 17 }, (_, i) => `/video/${i + 1}.mp4`);
+const clips = Array.from({ length: 36 }, (_, i) => `/video/${i + 1}.mp4`);
 const extraPhotoGroups = [
   { id: 'glimpse-one', eyebrow: '01 — dressed up & dancing around', title: '13 frames. One pink-sari kind of day.', files: Array.from({ length: 13 }, (_, i) => `/EXTRAs/${i + 1}.avif`) },
   { id: 'glimpse-two', eyebrow: '02 — the little life files', title: 'Hide-and-seek to flower-day.', files: Array.from({ length: 6 }, (_, i) => `/EXTRAs/${i + 14}.avif`) },
