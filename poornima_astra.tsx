@@ -732,7 +732,7 @@ export default function App() {
                 <div className="finale-kicker">A wish from Kunal</div>
                 <span className="stamp">19 · Nov 7</span>
               </div>
-              <iframe className="finale-pdf" src="/tanu-birthday-wish.pdf#view=FitH" title="Kunal’s handwritten birthday wish for Tanu"/>
+              <iframe className="finale-pdf" src="/tanu-birthday-wish.pdf#view=Fit" title="Kunal’s handwritten birthday wish for Tanu"/>
               <a className="finale-pdf-open" href="/tanu-birthday-wish.pdf" target="_blank" rel="noreferrer">Open the full wish</a>
             </article>
           </div>
